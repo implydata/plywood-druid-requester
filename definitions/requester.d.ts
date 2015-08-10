@@ -4,7 +4,7 @@ declare module Requester {
     context?: { [key: string]: any };
   }
 
-  interface FacetRequester<T> {
+  interface PlywoodRequester<T> {
     (request: DatabaseRequest<T>): Q.Promise<any>;
   }
 }

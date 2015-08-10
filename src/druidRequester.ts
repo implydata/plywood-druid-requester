@@ -9,7 +9,7 @@ import request = require('request');
 import Q = require('q');
 
 export interface DruidRequesterParameters {
-  locator?: Locator.FacetLocator;
+  locator?: Locator.PlywoodLocator;
   host?: string;
   timeout: number;
 }
@@ -25,7 +25,7 @@ function getDataSourcesFromQuery(query: Druid.Query): string[] {
   }
 }
 
-function basicLocator(host: string): Locator.FacetLocator {
+function basicLocator(host: string): Locator.PlywoodLocator {
   var hostnamePort = host.split(':');
   var hostname: string;
   var port: number;
@@ -66,7 +66,7 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
   return deferred.promise;
 }
 
-export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.FacetRequester<Druid.Query> {
+export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<Druid.Query> {
   var locator = parameters.locator;
   if (!locator) {
     var host = parameters.host;

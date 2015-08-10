@@ -35,7 +35,7 @@ druidRequester({
   .done()
 ```
 
-Although usually you would just pass `druidRequester` into the Druid driver that is part of plywood.
+Although usually you would just pass `druidRequester` into the Druid driver that is part of Plywood.
 
 ## Druid API extension
 

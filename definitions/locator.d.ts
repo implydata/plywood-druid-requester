@@ -4,7 +4,7 @@ declare module Locator {
     port?: number;
   }
 
-  interface FacetLocator {
+  interface PlywoodLocator {
     (): Q.Promise<Location>;
 
     // Event emitter extension
