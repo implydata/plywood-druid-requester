@@ -1,0 +1,37 @@
+{
+  "name": "plywood-druid-requester",
+  "version": "1.1.0",
+  "description": "The Druid requester for plywood (within node)",
+  "keywords": [
+    "druid",
+    "requester"
+  ],
+  "author": {
+    "name": "Vadim Ogievetsky",
+    "url": "http://vadim.ogievetsky.com"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/implyio/plywood-druid-requester.git"
+  },
+  "main": "build/druidRequester.js",
+  "typescript": {
+    "definition": "build/druidRequester.d.ts"
+  },
+  "scripts": {
+    "prepublish": "./prepublish"
+  },
+  "dependencies": {
+    "q": "^1.4.1",
+    "request": "^2.60.0"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "coffee-script": "^1.9.3",
+    "dts-bundle": "0.2.0",
+    "mocha": "^2.2.5",
+    "tslint": "^2.4.2",
+    "typescript": "^1.5.3"
+  }
+}
