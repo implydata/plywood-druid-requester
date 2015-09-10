@@ -91,21 +91,12 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         url = "http://" + location.hostname + ":" + (location.port || 8080) + "/druid/v2/";
-        if (query.queryType === "introspect" || query.queryType === "sourceList") {
-          return {
-            method: "GET",
-            url: url + "datasources/" + (query.queryType === "introspect" ? getDataSourcesFromQuery(query)[0] : ''),
-            json: true,
-            timeout: timeout
-          };
-        } else {
-          return {
-            method: "POST",
-            url: url + (context['pretty'] ? "?pretty" : ""),
-            json: query,
-            timeout: timeout
-          };
-        }
+        return {
+          method: "POST",
+          url: url + (context['pretty'] ? "?pretty" : ""),
+          json: query,
+          timeout: timeout
+        };
       })
       .then(requestAsPromise)
       .then((result: RequestResponse) => {
@@ -124,16 +115,6 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
 
         if (typeof body !== 'object') {
           throw new Error("bad response");
-        }
-
-        if (query.queryType === "introspect" &&
-            Array.isArray(body.dimensions) &&
-            body.dimensions.length === 0 &&
-            Array.isArray(body.metrics) &&
-            body.metrics.length === 0) {
-          err = new Error("No such datasource");
-          err.query = query;
-          throw err;
         }
 
         if (Array.isArray(body) && !body.length) {
