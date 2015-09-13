@@ -1,6 +1,6 @@
 # plywood-druid-requester
 
-This is the [Druid](http://druid.io/) requester making abstraction layer for [plywood](https://github.com/implyio/plywood).
+This is the [Druid](http://druid.io/) requester making abstraction layer for [plywood](https://github.com/implydata/plywood).
 
 Given a Druid query and an optional context it return a Q promise that resolves to the Druid data.
 

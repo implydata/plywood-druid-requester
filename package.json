@@ -13,7 +13,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "http://github.com/implyio/plywood-druid-requester.git"
+    "url": "http://github.com/implydata/plywood-druid-requester.git"
   },
   "main": "build/druidRequester.js",
   "typescript": {
