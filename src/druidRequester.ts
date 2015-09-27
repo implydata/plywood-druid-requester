@@ -66,6 +66,41 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
   return deferred.promise;
 }
 
+function locationToURL(location: Locator.Location): string {
+  return "http://" + location.hostname + ":" + (location.port || 8080) + "/druid/v2/";
+}
+
+function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q.Promise<any> {
+  return requestAsPromise({
+    method: "GET",
+    url: url + "datasources",
+    json: true,
+    timeout: timeout
+  })
+    .then((result: RequestResponse): any => {
+      var response = result.response;
+      var body = result.body;
+      var err: any;
+
+      if (response.statusCode !== 200 || !Array.isArray(body)) {
+        err = new Error("Bad status code in datasource listing");
+        err.query = query;
+        throw err;
+      }
+
+      if (getDataSourcesFromQuery(query).every((dataSource) => body.indexOf(dataSource) < 0)) {
+        err = new Error("No such datasource");
+        err.query = query;
+        throw err;
+      }
+
+      return null;
+    }, (err) => {
+      err.query = query;
+      throw err;
+    });
+}
+
 export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<Druid.Query> {
   var locator = parameters.locator;
   if (!locator) {
@@ -90,7 +125,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           query.context.timeout = timeout;
         }
 
-        url = "http://" + location.hostname + ":" + (location.port || 8080) + "/druid/v2/";
+        url = locationToURL(location);
         if (query.queryType === "introspect" || query.queryType === "sourceList") {
           return {
             method: "GET",
@@ -126,45 +161,22 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           throw new Error("bad response");
         }
 
-        if (query.queryType === "introspect" &&
-            Array.isArray(body.dimensions) &&
-            body.dimensions.length === 0 &&
-            Array.isArray(body.metrics) &&
-            body.metrics.length === 0) {
-          err = new Error("No such datasource");
-          err.query = query;
-          throw err;
-        }
+        if (query.queryType === "introspect") {
+          if (Array.isArray(body.dimensions) && !body.dimensions.length &&
+              Array.isArray(body.metrics) && !body.metrics.length) {
 
-        if (Array.isArray(body) && !body.length) {
-          return requestAsPromise({
-            method: "GET",
-            url: url + "datasources",
-            json: true,
-            timeout: timeout
-          })
-            .then((result: RequestResponse): any => {
-              var response = result.response;
-              var body = result.body;
-              var err: any;
-
-              if (response.statusCode !== 200 || !Array.isArray(body)) {
-                err = new Error("Bad response");
-                err.query = query;
-                throw err;
-              }
-
-              if (getDataSourcesFromQuery(query).every((dataSource) => body.indexOf(dataSource) < 0)) {
-                err = new Error("No such datasource");
-                err.query = query;
-                throw err;
-              }
-
-              return [];
-            }, (err) => {
+            return failIfNoDatasource(url, query, timeout).then((): any => {
+              err = new Error("Can not use GET route, probably data is in a real-time node or more than a two weeks old");
               err.query = query;
               throw err;
             });
+          }
+        } else {
+          if (Array.isArray(body) && !body.length) {
+            return failIfNoDatasource(url, query, timeout).then((): any[] => {
+              return [];
+            });
+          }
         }
 
         return body;

@@ -1,1 +1,1 @@
-exports.druidHost = '10.41.175.194'
+exports.druidHost = 'localhost:8082'

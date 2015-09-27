@@ -21,8 +21,8 @@ describe "Druid requester", ->
     it "correct error for bad datasource", (testComplete) ->
       druidRequester({
         query: {
-          "queryType": "maxTime",
-          "dataSource": 'wikipedia_editstream_borat'
+          "queryType": "timeBoundary",
+          "dataSource": 'wikipedia_borat'
         }
       })
       .then(-> throw new Error('DID_NOT_ERROR'))
@@ -33,16 +33,30 @@ describe "Druid requester", ->
       .done()
 
 
-    it "correct error for bad datasource (on introspect)", (testComplete) ->
+    it "correct error for bad datasource that does not exist (on introspect)", (testComplete) ->
       druidRequester({
         query: {
           "queryType": "introspect",
-          "dataSource": 'wikipedia_editstream_borat'
+          "dataSource": 'wikipedia_borat'
         }
       })
       .then(-> throw new Error('DID_NOT_ERROR'))
       .then(null, (err) ->
         expect(err.message).to.equal("No such datasource")
+        testComplete()
+      )
+      .done()
+
+    it "correct error for bad datasource that do exist (on introspect)", (testComplete) ->
+      druidRequester({
+        query: {
+          "queryType": "introspect",
+          "dataSource": 'imply-metrics'
+        }
+      })
+      .then(-> throw new Error('DID_NOT_ERROR'))
+      .then(null, (err) ->
+        expect(err.message).to.equal("Can not use GET route, probably data is in a real-time node or more than a two weeks old")
         testComplete()
       )
       .done()
@@ -57,7 +71,7 @@ describe "Druid requester", ->
       })
       .then((res) ->
         expect(res).be.an('Array')
-        expect(res.indexOf('wikipedia_editstream') > -1).to.equal(true)
+        expect(res.indexOf('wikipedia') > -1).to.equal(true)
         testComplete()
       )
       .done()
@@ -67,7 +81,7 @@ describe "Druid requester", ->
       druidRequester({
         query: {
           "queryType": "introspect",
-          "dataSource": 'wikipedia_editstream'
+          "dataSource": 'wikipedia'
         }
       })
       .then((res) ->
@@ -84,7 +98,7 @@ describe "Druid requester", ->
           "queryType": "introspect",
           "dataSource": {
             "type": "union"
-            "dataSources": ['wikipedia_editstream', 'wikipedia_editstream']
+            "dataSources": ['wikipedia', 'wikipedia']
           }
         }
       })
@@ -97,31 +111,32 @@ describe "Druid requester", ->
 
 
   describe "basic working", ->
-    it "gets max time", (testComplete) ->
+    it "gets timeBoundary", (testComplete) ->
       druidRequester({
         query: {
-          "queryType": "maxTime",
-          "dataSource": 'wikipedia_editstream'
+          "queryType": "timeBoundary",
+          "dataSource": 'wikipedia'
         }
       })
       .then((res) ->
         expect(res.length).to.equal(1)
-        expect(isNaN(new Date(res[0].result))).to.be.false
+        expect(isNaN(new Date(res[0].result.maxTime))).to.be.false
+        expect(isNaN(new Date(res[0].result.minTime))).to.be.false
         testComplete()
       )
       .done()
 
 
-    it "works with regular time series", (testComplete) ->
+    it "works with regular timeseries", (testComplete) ->
       druidRequester({
         query: {
           "queryType": "timeseries",
-          "dataSource": "wikipedia_editstream",
+          "dataSource": "wikipedia",
           "granularity": "hour",
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": [ "2014-01-01T00:00:00.000/2014-01-02T00:00:00.000" ]
+          "intervals": [ "2015-09-14T00:00:00.000/2015-09-15T00:00:00.000" ]
         }
       })
       .then((res) ->
@@ -135,7 +150,7 @@ describe "Druid requester", ->
       druidRequester({
         query: {
           "queryType": "timeseries",
-          "dataSource": "wikipedia_editstream",
+          "dataSource": "wikipedia",
           "granularity": "hour",
           "aggregations": [
             { "type": "count", "name": "Count" }
@@ -154,7 +169,7 @@ describe "Druid requester", ->
       druidRequester({
         query: {
           "queryType": "timeseries",
-          "dataSource": "wikipedia_editstream_borat",
+          "dataSource": "wikipedia_borat",
           "granularity": "hour",
           "aggregations": [
             { "type": "count", "name": "Count" }
@@ -174,7 +189,7 @@ describe "Druid requester", ->
   describe "timeout", ->
     it "works in simple case", (testComplete) ->
       timeoutDruidRequester = druidRequesterFactory({
-        host: '10.69.20.5'
+        host: info.druidHost
         timeout: 50
       })
 
@@ -185,7 +200,7 @@ describe "Druid requester", ->
             "useCache": false
           }
           "queryType": "timeseries",
-          "dataSource": "mmx_metrics",
+          "dataSource": "wikipedia",
           "granularity": "hour",
           "aggregations": [
             { "type": "count", "name": "Count" }
