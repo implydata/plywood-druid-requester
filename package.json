@@ -23,15 +23,15 @@
     "prepublish": "./prepublish"
   },
   "dependencies": {
-    "q": "^1.4.1",
-    "request": "^2.60.0"
+    "q": "1.4.1",
+    "request": "2.64.0"
   },
   "devDependencies": {
-    "chai": "^3.2.0",
-    "coffee-script": "^1.9.3",
-    "dts-bundle": "0.2.0",
-    "mocha": "^2.2.5",
-    "tslint": "^2.4.2",
-    "typescript": "^1.5.3"
+    "chai": "3.3.0",
+    "coffee-script": "1.10.0",
+    "dts-bundle": "0.3.0",
+    "mocha": "2.3.3",
+    "tslint": "2.5.0",
+    "typescript": "1.6.2"
   }
 }
