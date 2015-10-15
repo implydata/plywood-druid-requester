@@ -24,14 +24,14 @@
   },
   "dependencies": {
     "q": "1.4.1",
-    "request": "2.64.0"
+    "request": "2.65.0"
   },
   "devDependencies": {
     "chai": "3.3.0",
     "coffee-script": "1.10.0",
     "dts-bundle": "0.3.0",
     "mocha": "2.3.3",
-    "tslint": "2.5.0",
+    "tslint": "2.5.1",
     "typescript": "1.6.2"
   }
 }
