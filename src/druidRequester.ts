@@ -166,7 +166,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
               Array.isArray(body.metrics) && !body.metrics.length) {
 
             return failIfNoDatasource(url, query, timeout).then((): any => {
-              err = new Error("Can not use GET route, probably data is in a real-time node or more than a two weeks old");
+              err = new Error("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
               err.query = query;
               throw err;
             });
