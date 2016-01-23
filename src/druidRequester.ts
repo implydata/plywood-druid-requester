@@ -151,7 +151,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           if (body && body.error === "Query timeout") {
             err = new Error("timeout");
           } else {
-            err = new Error("Bad status code");
+            err = new Error((body && typeof body.error === 'string') ? body.error : 'Bad status code');
             err.query = query;
           }
           throw err;

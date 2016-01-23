@@ -47,20 +47,34 @@ describe "Druid requester", ->
       )
       .done()
 
+
     it "correct error for bad datasource that do exist (on introspect)", (testComplete) ->
       druidRequester({
         query: {
           "queryType": "introspect",
-          "dataSource": 'imply-metrics'
+          "dataSource": 'tpch_lineitem_100g'
         }
       })
       .then(-> throw new Error('DID_NOT_ERROR'))
       .then(null, (err) ->
-        expect(err.message).to.equal("Can not use GET route, probably data is in a real-time node or more than a two weeks old")
+        expect(err.message).to.equal("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.")
         testComplete()
       )
       .done()
 
+    it "correct error for general query error", (testComplete) ->
+      druidRequester({
+        query: {
+          "queryType": "timeTravel",
+          "dataSource": 'wikipedia'
+        }
+      })
+      .then(-> throw new Error('DID_NOT_ERROR'))
+      .then(null, (err) ->
+        expect(err.message).to.contain("Could not resolve type id 'timeTravel' into a subtype of [simple type, class io.druid.query.Query]")
+        testComplete()
+      )
+      .done()
 
   describe "introspection", ->
     it "introspects single data sources", (testComplete) ->
@@ -136,7 +150,7 @@ describe "Druid requester", ->
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": [ "2015-09-14T00:00:00.000/2015-09-15T00:00:00.000" ]
+          "intervals": ["2016-01-01T00:00:00/2016-01-02T00:00:00"]
         }
       })
       .then((res) ->
@@ -155,7 +169,7 @@ describe "Druid requester", ->
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": [ "2045-01-01T00:00:00.000/2045-01-02T00:00:00.000" ]
+          "intervals": ["2045-01-01T00:00:00.000/2045-01-02T00:00:00.000"]
         }
       })
       .then((res) ->
@@ -174,7 +188,7 @@ describe "Druid requester", ->
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": [ "2045-01-01T00:00:00.000/2045-01-02T00:00:00.000" ]
+          "intervals": ["2045-01-01T00:00:00.000/2045-01-02T00:00:00.000"]
         }
       })
       .then(-> throw new Error('DID_NOT_ERROR'))
@@ -183,7 +197,6 @@ describe "Druid requester", ->
         testComplete()
       )
       .done()
-
 
 
   describe "timeout", ->
@@ -205,7 +218,7 @@ describe "Druid requester", ->
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": [ "2014-01-01T00:00:00.000/2014-01-02T00:00:00.000" ]
+          "intervals": ["2014-01-01T00:00:00/2014-01-02T00:00:00"]
         }
       })
       .then(-> throw new Error('DID_NOT_ERROR'))
