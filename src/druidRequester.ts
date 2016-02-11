@@ -16,6 +16,7 @@ export interface DruidRequesterParameters {
 
 function getDataSourcesFromQuery(query: Druid.Query): string[] {
   var queryDataSource = query.dataSource;
+  if (!queryDataSource) return [];
   if (typeof queryDataSource === 'string') {
     return [queryDataSource];
   } else if (queryDataSource.type === "union") {
@@ -171,7 +172,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
               throw err;
             });
           }
-        } else {
+        } else if (query.queryType !== "sourceList") {
           if (Array.isArray(body) && !body.length) {
             return failIfNoDatasource(url, query, timeout).then((): any[] => {
               return [];
