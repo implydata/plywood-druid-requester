@@ -8,7 +8,7 @@ var druidRequester = druidRequesterFactory({
   host: info.druidHost
 });
 
-describe("Druid requester", function() {
+describe("Druid requester static data source", function() {
   this.timeout(5 * 1000);
 
   describe("error", function() {
@@ -30,8 +30,7 @@ describe("Druid requester", function() {
       .then(null, function(err) {
         expect(err.message).to.equal("No such datasource");
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
@@ -47,8 +46,7 @@ describe("Druid requester", function() {
       .then(null, function(err) {
         expect(err.message).to.equal("No such datasource");
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
@@ -64,12 +62,11 @@ describe("Druid requester", function() {
       .then(null, function(err) {
         expect(err.message).to.equal("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
-    return it("correct error for general query error", function(testComplete) {
+    it("correct error for general query error", function(testComplete) {
       druidRequester({
         query: {
           "queryType": "timeTravel",
@@ -97,45 +94,7 @@ describe("Druid requester", function() {
         expect(res).be.an('Array');
         expect(res.indexOf('wikipedia') > -1).to.equal(true);
         return testComplete();
-      }
-      )
-      .done();
-    });
-
-
-    it("introspects single dataSource", function(testComplete) {
-      druidRequester({
-        query: {
-          "queryType": "introspect",
-          "dataSource": 'wikipedia'
-        }
       })
-      .then(function(res) {
-        expect(res.dimensions).be.an('Array');
-        expect(res.metrics).be.an('Array');
-        return testComplete();
-      }
-      )
-      .done();
-    });
-
-
-    return it("introspects multi dataSource", function(testComplete) {
-      druidRequester({
-        query: {
-          "queryType": "introspect",
-          "dataSource": {
-            "type": "union",
-            "dataSources": ['wikipedia', 'wikipedia']
-          }
-        }
-      })
-      .then(function(res) {
-        expect(res.dimensions).be.an('Array');
-        expect(res.metrics).be.an('Array');
-        return testComplete();
-      }
-      )
       .done();
     });
   });
@@ -154,8 +113,7 @@ describe("Druid requester", function() {
         expect(isNaN(new Date(res[0].result.maxTime))).to.be.false;
         expect(isNaN(new Date(res[0].result.minTime))).to.be.false;
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
@@ -175,8 +133,7 @@ describe("Druid requester", function() {
       .then(function(res) {
         expect(res.length).to.equal(24);
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
@@ -196,8 +153,7 @@ describe("Druid requester", function() {
       .then(function(res) {
         expect(res.length).to.equal(0);
         return testComplete();
-      }
-      )
+      })
       .done();
     });
 
@@ -218,8 +174,7 @@ describe("Druid requester", function() {
       .then(null, function(err) {
         expect(err.message).to.equal("No such datasource");
         return testComplete();
-      }
-      )
+      })
       .done();
     });
   });
@@ -251,8 +206,7 @@ describe("Druid requester", function() {
       .then(null, function(err) {
         expect(err.message).to.equal("timeout");
         return testComplete();
-      }
-      )
+      })
       .done();
     });
   });
