@@ -18,12 +18,12 @@ describe("Druid requester live data source", function() {
         "dataSource": 'wikipedia'
       }
     })
-    .then(function(res) {
-      expect(res.dimensions).be.an('Array');
-      expect(res.metrics).be.an('Array');
-      testComplete();
-    })
-    .done();
+      .then(function(res) {
+        expect(res.dimensions).be.an('Array');
+        expect(res.metrics).be.an('Array');
+        testComplete();
+      })
+      .done();
   });
 
   it("introspects multi dataSource", function(testComplete) {
@@ -36,12 +36,12 @@ describe("Druid requester live data source", function() {
         }
       }
     })
-    .then(function(res) {
-      expect(res.dimensions).be.an('Array');
-      expect(res.metrics).be.an('Array');
-      testComplete();
-    })
-    .done();
+      .then(function(res) {
+        expect(res.dimensions).be.an('Array');
+        expect(res.metrics).be.an('Array');
+        testComplete();
+      })
+      .done();
   });
 });
 
