@@ -5,20 +5,19 @@ var { druidRequesterFactory } = require('../build/druidRequester');
 var info = require('./info');
 
 var druidRequester = druidRequesterFactory({
-  host: info.druidHost
+  host: info.liveDruidHost
 });
 
 describe("Druid requester live data source", function() {
-  this.timeout(5 * 1000);
 
-  it("introspects single dataSource", function(testComplete) {
+  it("introspects single dataSource", (testComplete) => {
     druidRequester({
       query: {
         "queryType": "introspect",
         "dataSource": 'wikipedia'
       }
     })
-      .then(function(res) {
+      .then((res) => {
         expect(res.dimensions).be.an('Array');
         expect(res.metrics).be.an('Array');
         testComplete();
@@ -26,7 +25,7 @@ describe("Druid requester live data source", function() {
       .done();
   });
 
-  it("introspects multi dataSource", function(testComplete) {
+  it("introspects multi dataSource", (testComplete) => {
     druidRequester({
       query: {
         "queryType": "introspect",
@@ -36,7 +35,7 @@ describe("Druid requester live data source", function() {
         }
       }
     })
-      .then(function(res) {
+      .then((res) => {
         expect(res.dimensions).be.an('Array');
         expect(res.metrics).be.an('Array');
         testComplete();

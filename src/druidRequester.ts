@@ -68,7 +68,7 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
 }
 
 function locationToURL(location: Locator.Location): string {
-  return "http://" + location.hostname + ":" + (location.port || 8080) + "/druid/v2/";
+  return `http://${location.hostname}:${location.port || 8080}`;
 }
 
 function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q.Promise<any> {
@@ -114,7 +114,8 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
   return (req): Q.Promise<any[]> => {
     var context = req.context || {};
     var query = req.query;
-    if (Array.isArray(query.intervals) && query.intervals.length === 1 && query.intervals[0] === "1000-01-01/1000-01-02") {
+    var { queryType, intervals } = query;
+    if (intervals === "1000-01-01/1000-01-02") {
       return Q([]);
     }
 
@@ -127,20 +128,30 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         url = locationToURL(location);
-        if (query.queryType === "introspect" || query.queryType === "sourceList") {
+        if (queryType === "status") {
           return {
             method: "GET",
-            url: url + "datasources/" + (query.queryType === "introspect" ? getDataSourcesFromQuery(query)[0] : ''),
+            url: url + '/status',
             json: true,
             timeout: timeout
           };
         } else {
-          return {
-            method: "POST",
-            url: url + (context['pretty'] ? "?pretty" : ""),
-            json: query,
-            timeout: timeout
-          };
+          url += '/druid/v2/';
+          if (queryType === "introspect" || queryType === "sourceList") {
+            return {
+              method: "GET",
+              url: url + "datasources/" + (queryType === "introspect" ? getDataSourcesFromQuery(query)[0] : ''),
+              json: true,
+              timeout: timeout
+            };
+          } else {
+            return {
+              method: "POST",
+              url: url + (context['pretty'] ? "?pretty" : ""),
+              json: query,
+              timeout: timeout
+            };
+          }
         }
       })
       .then(requestAsPromise)
@@ -162,7 +173,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           throw new Error("bad response");
         }
 
-        if (query.queryType === "introspect") {
+        if (queryType === "introspect") {
           if (Array.isArray(body.dimensions) && !body.dimensions.length &&
               Array.isArray(body.metrics) && !body.metrics.length) {
 
@@ -172,7 +183,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
               throw err;
             });
           }
-        } else if (query.queryType !== "sourceList") {
+        } else if (queryType !== "sourceList" && queryType !== "status") {
           if (Array.isArray(body) && !body.length) {
             return failIfNoDatasource(url, query, timeout).then((): any[] => {
               return [];

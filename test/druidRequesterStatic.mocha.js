@@ -9,10 +9,9 @@ var druidRequester = druidRequesterFactory({
 });
 
 describe("Druid requester static data source", function() {
-  this.timeout(5 * 1000);
 
-  describe("error", function() {
-    it("throws if there is not host or locator", function() {
+  describe("error", () => {
+    it("throws if there is not host or locator", () => {
       expect(() => {
         druidRequesterFactory({});
       }).to.throw('must have a `host` or a `locator`');
@@ -26,12 +25,12 @@ describe("Druid requester static data source", function() {
           "dataSource": 'wikipedia_borat'
         }
       })
-        .then(function() {
+        .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
           expect(err.message).to.equal("No such datasource");
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -44,12 +43,12 @@ describe("Druid requester static data source", function() {
           "dataSource": 'wikipedia_borat'
         }
       })
-        .then(function() {
+        .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
           expect(err.message).to.equal("No such datasource");
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -62,12 +61,12 @@ describe("Druid requester static data source", function() {
           "dataSource": 'wikipedia'
         }
       })
-        .then(function() {
+        .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
           expect(err.message).to.equal("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -79,36 +78,50 @@ describe("Druid requester static data source", function() {
           "dataSource": 'wikipedia'
         }
       })
-        .then(function() {
+        .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
             expect(err.message).to.contain("Could not resolve type id 'timeTravel' into a subtype of [simple type, class io.druid.query.Query]");
-            return testComplete();
+            testComplete();
           }
         )
         .done();
     });
   });
 
-  describe("introspection", function() {
+  describe("introspection", () => {
     it("introspects single data sources", function(testComplete) {
       druidRequester({
         query: {
           "queryType": "sourceList"
         }
       })
-        .then(function(res) {
+        .then((res) => {
           expect(res).be.an('Array');
           expect(res.indexOf('wikipedia') > -1).to.equal(true);
-          return testComplete();
+          testComplete();
         })
         .done();
     });
   });
 
 
-  describe("basic working", function() {
+  describe("basic working", () => {
+
+    it("gets the status", function(testComplete) {
+      druidRequester({
+        query: {
+          "queryType": "status"
+        }
+      })
+        .then((res) => {
+          expect(res.version).to.equal("0.8.3-iap1");
+          testComplete();
+        })
+        .done();
+    });
+
     it("gets timeBoundary", function(testComplete) {
       druidRequester({
         query: {
@@ -116,11 +129,11 @@ describe("Druid requester static data source", function() {
           "dataSource": 'wikipedia'
         }
       })
-        .then(function(res) {
+        .then((res) => {
           expect(res.length).to.equal(1);
           expect(isNaN(new Date(res[0].result.maxTime))).to.be.false;
           expect(isNaN(new Date(res[0].result.minTime))).to.be.false;
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -138,9 +151,9 @@ describe("Druid requester static data source", function() {
           "intervals": ["2015-09-12T00:00:00/2015-09-13T00:00:00"]
         }
       })
-        .then(function(res) {
+        .then((res) => {
           expect(res.length).to.equal(24);
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -158,9 +171,9 @@ describe("Druid requester static data source", function() {
           "intervals": ["2045-01-01T00:00:00.000/2045-01-02T00:00:00.000"]
         }
       })
-        .then(function(res) {
+        .then((res) => {
           expect(res.length).to.equal(0);
-          return testComplete();
+          testComplete();
         })
         .done();
     });
@@ -178,19 +191,19 @@ describe("Druid requester static data source", function() {
           "intervals": ["2045-01-01T00:00:00.000/2045-01-02T00:00:00.000"]
         }
       })
-        .then(function() {
+        .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
           expect(err.message).to.equal("No such datasource");
-          return testComplete();
+          testComplete();
         })
         .done();
     });
   });
 
 
-  describe("timeout", function() {
+  describe("timeout", () => {
     it("works in simple case", function(testComplete) {
       var timeoutDruidRequester = druidRequesterFactory({
         host: info.druidHost,
@@ -199,25 +212,29 @@ describe("Druid requester static data source", function() {
 
       timeoutDruidRequester({
         query: {
-          "context": {
-            //"timeout": 50
-            "useCache": false
-          },
-          "queryType": "timeseries",
+          "queryType": "topN",
           "dataSource": "wikipedia",
-          "granularity": "hour",
-          "aggregations": [
-            { "type": "count", "name": "Count" }
-          ],
-          "intervals": ["2015-09-12T00:00:00/2015-09-13T00:00:00"]
+          "intervals": "2015-09-12/2015-09-13",
+          "granularity": "all",
+          "context": {
+            "useCache": false,
+            "populateCache": false
+          },
+          "aggregations": [{ "name": "RowCount", "type": "count" }],
+          "dimension": 'page',
+          "metric": {
+            "type": "alphaNumeric"
+          },
+          "threshold": 1000
         }
       })
-        .then(function() {
+        .then((res) => {
+          console.log(res);
           throw new Error('DID_NOT_ERROR');
         })
-        .then(null, function(err) {
+        .catch((err) => {
           expect(err.message).to.equal("timeout");
-          return testComplete();
+          testComplete();
         })
         .done();
     });
