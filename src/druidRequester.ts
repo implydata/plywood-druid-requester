@@ -35,7 +35,7 @@ function basicLocator(host: string): Locator.PlywoodLocator {
     port = Number(hostnamePort[1]);
   } else {
     hostname = hostnamePort[0];
-    port = 8080;
+    port = 8082;
   }
   return () => {
     return Q({
@@ -68,7 +68,7 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
 }
 
 function locationToURL(location: Locator.Location): string {
-  return `http://${location.hostname}:${location.port || 8080}`;
+  return `http://${location.hostname}:${location.port || 8082}`;
 }
 
 function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q.Promise<any> {
