@@ -30,6 +30,7 @@
     "chai": "3.5.0",
     "dts-bundle": "0.4.3",
     "mocha": "2.4.5",
+    "nock": "7.7.2",
     "tslint": "3.6.0",
     "typescript": "1.8.9"
   }

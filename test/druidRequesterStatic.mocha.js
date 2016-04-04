@@ -18,7 +18,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("correct error for bad datasource", function(testComplete) {
+    it("correct error for bad datasource", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeBoundary",
@@ -36,7 +36,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("correct error for bad datasource that does not exist (on introspect)", function(testComplete) {
+    it("correct error for bad datasource that does not exist (on introspect)", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "introspect",
@@ -54,7 +54,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("correct error for bad datasource that do exist (on introspect)", function(testComplete) {
+    it("correct error for bad datasource that do exist (on introspect)", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "introspect",
@@ -71,7 +71,7 @@ describe("Druid requester static data source", function() {
         .done();
     });
 
-    it("correct error for general query error", function(testComplete) {
+    it("correct error for general query error", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeTravel",
@@ -91,7 +91,7 @@ describe("Druid requester static data source", function() {
   });
 
   describe("introspection", () => {
-    it("introspects single data sources", function(testComplete) {
+    it("introspects single data sources", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "sourceList"
@@ -109,7 +109,7 @@ describe("Druid requester static data source", function() {
 
   describe("basic working", () => {
 
-    it("gets the status", function(testComplete) {
+    it("gets the status", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "status"
@@ -122,7 +122,7 @@ describe("Druid requester static data source", function() {
         .done();
     });
 
-    it("gets timeBoundary", function(testComplete) {
+    it("gets timeBoundary", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeBoundary",
@@ -139,7 +139,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("works with regular timeseries", function(testComplete) {
+    it("works with regular timeseries", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeseries",
@@ -159,7 +159,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("works with regular time series in the far future", function(testComplete) {
+    it("works with regular time series in the far future", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeseries",
@@ -179,7 +179,7 @@ describe("Druid requester static data source", function() {
     });
 
 
-    it("works with regular time series in the far future with invalid data source", function(testComplete) {
+    it("works with regular time series in the far future with invalid data source", (testComplete) => {
       druidRequester({
         query: {
           "queryType": "timeseries",
@@ -204,7 +204,7 @@ describe("Druid requester static data source", function() {
 
 
   describe("timeout", () => {
-    it("works in simple case", function(testComplete) {
+    it("works in simple case", (testComplete) => {
       var timeoutDruidRequester = druidRequesterFactory({
         host: info.druidHost,
         timeout: 50

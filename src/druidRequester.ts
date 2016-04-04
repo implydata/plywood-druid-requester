@@ -3,7 +3,6 @@
 /// <reference path="../definitions/locator.d.ts" />
 /// <reference path="../definitions/requester.d.ts" />
 /// <reference path="../definitions/druid.d.ts" />
-"use strict";
 
 import request = require('request');
 import Q = require('q');
@@ -11,7 +10,22 @@ import Q = require('q');
 export interface DruidRequesterParameters {
   locator?: Locator.PlywoodLocator;
   host?: string;
-  timeout: number;
+  timeout?: number;
+  requestDecorator?: DruidRequestDecorator;
+}
+
+export interface DruidRequestDecorator {
+  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration;
+}
+
+export interface DecoratorRequest {
+  method: string;
+  url: string;
+  query: Druid.Query;
+}
+
+export interface Decoration {
+  headers: { [header: string]: string };
 }
 
 function getDataSourcesFromQuery(query: Druid.Query): string[] {
@@ -22,7 +36,7 @@ function getDataSourcesFromQuery(query: Druid.Query): string[] {
   } else if (queryDataSource.type === "union") {
     return queryDataSource.dataSources;
   } else {
-    throw new Error("unsupported datasource type '" + queryDataSource.type + "'");
+    throw new Error(`unsupported datasource type '${queryDataSource.type}'`);
   }
 }
 
@@ -103,15 +117,13 @@ function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<Druid.Query> {
-  var locator = parameters.locator;
+  var { locator, host, timeout, requestDecorator } = parameters;
   if (!locator) {
-    var host = parameters.host;
     if (!host) throw new Error("must have a `host` or a `locator`");
     locator = basicLocator(host);
   }
-  var timeout = parameters.timeout;
 
-  return (req): Q.Promise<any[]> => {
+  return (req): Q.Promise<any> => {
     var context = req.context || {};
     var query = req.query;
     var { queryType, intervals } = query;
@@ -128,8 +140,9 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         url = locationToURL(location);
+        var options: request.Options;
         if (queryType === "status") {
-          return {
+          options = {
             method: "GET",
             url: url + '/status',
             json: true,
@@ -138,14 +151,14 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         } else {
           url += '/druid/v2/';
           if (queryType === "introspect" || queryType === "sourceList") {
-            return {
+            options = {
               method: "GET",
               url: url + "datasources/" + (queryType === "introspect" ? getDataSourcesFromQuery(query)[0] : ''),
               json: true,
               timeout: timeout
             };
           } else {
-            return {
+            options = {
               method: "POST",
               url: url + (context['pretty'] ? "?pretty" : ""),
               json: query,
@@ -153,6 +166,20 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
             };
           }
         }
+
+        if (requestDecorator) {
+          var decoration = requestDecorator({
+            method: options.method,
+            url: options.url,
+            query
+          }, context['decoratorContext']);
+
+          if (decoration.headers) {
+            options.headers = decoration.headers;
+          }
+        }
+
+        return options;
       })
       .then(requestAsPromise)
       .then((result: RequestResponse) => {
