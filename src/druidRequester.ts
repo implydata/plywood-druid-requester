@@ -15,7 +15,7 @@ export interface DruidRequesterParameters {
 }
 
 export interface DruidRequestDecorator {
-  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration;
+  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration | Q.Promise<Decoration>;
 }
 
 export interface DecoratorRequest {
@@ -168,14 +168,19 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         if (requestDecorator) {
-          var decoration = requestDecorator({
+          var decorationPromise = requestDecorator({
             method: options.method,
             url: options.url,
             query
           }, context['decoratorContext']);
 
-          if (decoration.headers) {
-            options.headers = decoration.headers;
+          if (decorationPromise) {
+            return Q(decorationPromise).then((decoration: Decoration) => {
+              if (decoration.headers) {
+                options.headers = decoration.headers;
+              }
+              return options;
+            });
           }
         }
 
