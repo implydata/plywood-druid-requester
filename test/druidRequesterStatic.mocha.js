@@ -116,7 +116,7 @@ describe("Druid requester static data source", function() {
         }
       })
         .then((res) => {
-          expect(res.version).to.equal("0.8.3-iap1");
+          expect(res.version).to.equal(info.druidVersion);
           testComplete();
         })
         .done();
@@ -131,8 +131,8 @@ describe("Druid requester static data source", function() {
       })
         .then((res) => {
           expect(res.length).to.equal(1);
-          expect(isNaN(new Date(res[0].result.maxTime))).to.be.false;
-          expect(isNaN(new Date(res[0].result.minTime))).to.be.false;
+          expect(isNaN(new Date(res[0].result.maxTime))).to.equal(false);
+          expect(isNaN(new Date(res[0].result.minTime))).to.equal(false);
           testComplete();
         })
         .done();
