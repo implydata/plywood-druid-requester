@@ -3,12 +3,12 @@
     <properties>
       <sourceFilesUrls>
         <item url="file://$PROJECT_DIR$/node_modules/dts-bundle/lib/index.js" />
-        <item url="file://$PROJECT_DIR$/node_modules/dts-bundle/lib/index.js" />
+        <item url="file://$PROJECT_DIR$/node_modules/tslint/scripts/buildDocs.js" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
       <root url="file://$PROJECT_DIR$/node_modules/dts-bundle/lib/index.js" />
-      <root url="file://$PROJECT_DIR$/node_modules/dts-bundle/lib/index.js" />
+      <root url="file://$PROJECT_DIR$/node_modules/tslint/scripts/buildDocs.js" />
     </CLASSES>
     <SOURCES />
   </library>

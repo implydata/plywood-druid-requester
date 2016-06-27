@@ -1,1 +1,22 @@
-.idea
+# === WebStorm ===
+/.idea/
+
+# === Build ===
+
+/compile
+/script/
+/prepublish
+/extra/
+/tslint.json
+
+# === Source ===
+
+/src/
+
+# === Test ===
+
+/test/
+
+# === Misc ===
+
+/private/
