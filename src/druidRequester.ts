@@ -28,7 +28,12 @@ export interface DruidRequesterParameters {
   locator?: Locator.PlywoodLocator;
   host?: string;
   timeout?: number;
+  urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
+}
+
+export interface DruidUrlBuilder {
+  (location: Locator.Location): string
 }
 
 export interface DruidRequestDecorator {
@@ -76,6 +81,10 @@ function basicLocator(host: string): Locator.PlywoodLocator {
   }
 }
 
+function basicUrlBuilder(location: Locator.Location): string {
+  return `http://${location.hostname}:${location.port || 8082}`;
+}
+
 interface RequestResponse {
   response: {
     statusCode: number;
@@ -96,10 +105,6 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
     }
   });
   return deferred.promise;
-}
-
-function locationToURL(location: Locator.Location): string {
-  return `http://${location.hostname}:${location.port || 8082}`;
 }
 
 function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q.Promise<any> {
@@ -134,10 +139,13 @@ function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<Druid.Query> {
-  var { locator, host, timeout, requestDecorator } = parameters;
+  var { locator, host, timeout, urlBuilder, requestDecorator } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
     locator = basicLocator(host);
+  }
+  if (!urlBuilder) {
+    urlBuilder = basicUrlBuilder;
   }
 
   return (req): Q.Promise<any> => {
@@ -156,7 +164,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           query.context.timeout = timeout;
         }
 
-        url = locationToURL(location);
+        url = urlBuilder(location);
         var options: request.Options;
         if (queryType === "status") {
           options = {

@@ -82,6 +82,38 @@ describe("Druid requester static data source", function() {
       .done();
   });
 
+  it("works with a different URL builder", (testComplete) => {
+    var druidRequester = druidRequesterFactory({
+      host: 'localhost',
+      urlBuilder: (location) => {
+        return `http://${location.hostname}/proxy`
+      }
+    })
+
+    nock('http://localhost')
+      .post('/proxy/druid/v2/', {
+        'queryType': 'topN',
+        'dataSource': 'dsz'
+      })
+      .reply(200, {
+        lol: 'data'
+      });
+
+    druidRequester({
+      query: {
+        'queryType': 'topN',
+        'dataSource': 'dsz'
+      }
+    })
+      .then((res) => {
+        expect(res).to.deep.equal({
+          lol: 'data'
+        });
+        testComplete();
+      })
+      .done();
+  });
+
   it("works with simple headers POST (sync)", (testComplete) => {
     var druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
