@@ -1,7 +1,6 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 rm -rf build/*
 mkdir -p build
 
-node_modules/.bin/tsc -m commonjs --noImplicitAny --declaration --removeComments --outDir build src/*.ts \
-  && node extra/extra.js;
+node_modules/.bin/tsc

@@ -15,12 +15,6 @@
  * limitations under the License.
  */
 
-/// <reference path="../typings/request/request.d.ts" />
-/// <reference path="../typings/q/Q.d.ts" />
-/// <reference path="../definitions/locator.d.ts" />
-/// <reference path="../definitions/requester.d.ts" />
-/// <reference path="../definitions/druid.d.ts" />
-
 import request = require('request');
 import Q = require('q');
 
@@ -86,9 +80,7 @@ function basicUrlBuilder(location: Locator.Location): string {
 }
 
 interface RequestResponse {
-  response: {
-    statusCode: number;
-  };
+  response: any;
   body: any;
 }
 

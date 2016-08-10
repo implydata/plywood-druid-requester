@@ -1,6 +1,6 @@
 {
   "name": "plywood-druid-requester",
-  "version": "1.4.6",
+  "version": "1.5.0",
   "description": "Druid requester for Plywood (within node)",
   "keywords": [
     "druid",
@@ -16,22 +16,21 @@
     "url": "http://github.com/implydata/plywood-druid-requester.git"
   },
   "main": "build/druidRequester.js",
-  "typescript": {
-    "definition": "build/druidRequester.d.ts"
-  },
+  "typings": "build/druidRequester.d.ts",
   "scripts": {
     "prepublish": "./prepublish"
   },
   "dependencies": {
     "q": "1.4.1",
-    "request": "2.72.0"
+    "request": "2.74.0"
   },
   "devDependencies": {
+    "@types/q": "0.0.28",
+    "@types/request": "0.0.28",
     "chai": "3.5.0",
-    "dts-bundle": "0.4.3",
-    "mocha": "2.5.3",
+    "mocha": "3.0.2",
     "nock": "8.0.0",
-    "tslint": "3.12.1",
-    "typescript": "1.8.10"
+    "tslint": "3.14.0",
+    "typescript": "beta"
   }
 }
