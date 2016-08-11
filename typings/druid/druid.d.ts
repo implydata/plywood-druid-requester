@@ -1,4 +1,21 @@
-// Type definitions for druid.io (version 0.8.2)
+/*
+ * Copyright 2015-2015 Metamarkets Group Inc.
+ * Copyright 2015-2016 Imply Data, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Type definitions for druid.io (version 0.9.2)
 // Project: http://druid.io/
 // Definitions by: Vadim Ogievetsky <https://github.com/vogievetsky/>
 // Definitions: https://github.com/implyio/druid.d.ts
@@ -115,8 +132,9 @@ declare module Druid {
         lowerLimit?: number;
         upperLimit?: number;
 
-        // Also arbitrary keys are supported
-        [key: string]: any;
+        // Specific to type: "thetaSketch"
+        isInputThetaSketch?: boolean;
+        size?: number;
     }
 
     // http://druid.io/docs/latest/Post-aggregations.html
@@ -148,6 +166,13 @@ declare module Druid {
 
         // Specific to type: "quantiles"
         probabilities?: number[];
+
+        // Specific to type: "thetaSketchEstimate"
+        field?: PostAggregation;
+
+        // Specific to type: "thetaSketchSetOp"
+        func?: 'UNION' | 'INTERSECT' | 'NOT';
+        size?: number;
     }
 
     // http://druid.io/docs/latest/Granularities.html
@@ -170,8 +195,8 @@ declare module Druid {
     }
     interface LimitSpec {
         type: string;
-        limit: number;
-        columns: OrderByColumnSpec[];
+        limit?: number;
+        columns?: OrderByColumnSpec[];
     }
 
     // http://druid.io/docs/latest/Having.html
@@ -191,8 +216,9 @@ declare module Druid {
     interface SearchQuerySpec {
         type: string;
 
-        // Specific to type: "insensitive_contains"
+        // Specific to type: "contains"
         value?: string;
+        caseSensitive?: boolean;
 
         // Specific to type: "fragment"
         values?: string[];
@@ -246,9 +272,10 @@ declare module Druid {
         locale?: string;
 
         // Specific to type: "lookup"
-        lookup?: ExtractionLookup;
+        lookup?: ExtractionLookup | string; // string if type = registeredLookup
         retainMissingValue?: boolean;
         replaceMissingValueWith?: string;
+        optimize?: boolean;
 
         // Specific to type: "cascade"
         extractionFns?: ExtractionFn[];
@@ -260,6 +287,9 @@ declare module Druid {
 
         // Specific to type: "regexFiltered"
         pattern?: string;
+
+        // Specific to type: "stringFormat"
+        nullHandling?: 'nullString' | 'emptyString' | 'returnNull';
     }
 
     type DimensionSpec = string | DimensionSpecFull;
@@ -330,6 +360,7 @@ declare module Druid {
         searchDimensions?: string[];
         query?: SearchQuerySpec;
         sort?: string; // ToDo: revisit after clarification
+        lenientAggregatorMerge?: boolean;
 
         // Specific to queryType: "segmentMetadata"
         // http://druid.io/docs/latest/SegmentMetadataQuery.html
@@ -355,6 +386,7 @@ declare module Druid {
         // http://druid.io/docs/latest/SelectQuery.html
         metrics?: string[];
         pagingSpec?: PagingSpec;
+        descending?: boolean;
     }
 
     /* ----------------------- *\
@@ -450,4 +482,23 @@ declare module Druid {
     }
 
     type SelectResults = SelectDatum[];
+
+
+    interface StatusModule {
+        name: string;
+        artifact: string;
+        version: string;
+    }
+
+    interface StatusResult {
+        version: string;
+        modules: StatusModule[],
+        memory: {
+            maxMemory: number;
+            totalMemory: number;
+            freeMemory: number;
+            usedMemory: number;
+        };
+    }
+
 }

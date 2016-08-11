@@ -15,8 +15,12 @@
  * limitations under the License.
  */
 
-import request = require('request');
-import Q = require('q');
+/// <reference path="../typings/requester.d.ts" />
+/// <reference path="../typings/locator.d.ts" />
+/// <reference path="../typings/druid/druid.d.ts" />
+
+import * as request from 'request';
+import * as Q from 'q';
 
 export interface DruidRequesterParameters {
   locator?: Locator.PlywoodLocator;
