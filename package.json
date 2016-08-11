@@ -31,6 +31,6 @@
     "mocha": "3.0.2",
     "nock": "8.0.0",
     "tslint": "3.14.0",
-    "typescript": "beta"
+    "typescript": "2.0.0"
   }
 }

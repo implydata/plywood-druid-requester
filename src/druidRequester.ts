@@ -17,7 +17,6 @@
 
 /// <reference path="../typings/requester.d.ts" />
 /// <reference path="../typings/locator.d.ts" />
-/// <reference path="../typings/druid/druid.d.ts" />
 
 import * as request from 'request';
 import * as Q from 'q';
@@ -41,14 +40,14 @@ export interface DruidRequestDecorator {
 export interface DecoratorRequest {
   method: string;
   url: string;
-  query: Druid.Query;
+  query: any;
 }
 
 export interface Decoration {
   headers: { [header: string]: string };
 }
 
-function getDataSourcesFromQuery(query: Druid.Query): string[] {
+function getDataSourcesFromQuery(query: any): string[] {
   var queryDataSource = query.dataSource;
   if (!queryDataSource) return [];
   if (typeof queryDataSource === 'string') {
@@ -103,7 +102,7 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
   return deferred.promise;
 }
 
-function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q.Promise<any> {
+function failIfNoDatasource(url: string, query: any, timeout: number): Q.Promise<any> {
   return requestAsPromise({
     method: "GET",
     url: url + "datasources",
@@ -134,7 +133,7 @@ function failIfNoDatasource(url: string, query: Druid.Query, timeout: number): Q
     });
 }
 
-export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<Druid.Query> {
+export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<any> {
   var { locator, host, timeout, urlBuilder, requestDecorator } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
