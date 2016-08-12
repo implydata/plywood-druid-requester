@@ -115,7 +115,7 @@ function failIfNoDatasource(url: string, query: any, timeout: number): Q.Promise
       var err: any;
 
       if (response.statusCode !== 200 || !Array.isArray(body)) {
-        err = new Error("Bad status code in datasource listing");
+        err = new Error(`Bad status code (${response.statusCode}) in datasource listing`);
         err.query = query;
         throw err;
       }
@@ -215,8 +215,18 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           if (body && body.error === "Query timeout") {
             err = new Error("timeout");
           } else {
-            err = new Error((body && typeof body.error === 'string') ? body.error : `Bad status code (${response.statusCode})`);
+            var message: string;
+            if (body && typeof body.error === 'string') {
+              message = body.errorClass || body.error;
+              if (typeof body.errorMessage === 'string') {
+                message = `${message}: ${body.errorMessage}`;
+              }
+            } else {
+              message = `Bad status code (${response.statusCode})`;
+            }
+            err = new Error(message);
             err.query = query;
+            if (body && typeof body.host === 'string') err.host = body.host;
           }
           throw err;
         }

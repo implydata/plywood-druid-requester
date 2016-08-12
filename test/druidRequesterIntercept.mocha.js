@@ -200,4 +200,63 @@ describe("Druid requester static data source", function() {
       .done();
   });
 
+  it("formats plain error", (testComplete) => {
+    var druidRequester = druidRequesterFactory({
+      host: 'a.druid.host',
+    });
+
+    nock('http://a.druid.host:8082')
+      .post('/druid/v2/', {
+        "queryType": "groupBy",
+        "dataSource": 'dsz'
+      })
+      .reply(500, {
+        "error": "Opps"
+      });
+
+    druidRequester({
+      query: {
+        "queryType": "groupBy",
+        "dataSource": 'dsz'
+      }
+    })
+      .then(() => { throw new Error('did not throw') })
+      .catch((e) => {
+        expect(e.message).to.equal('Opps');
+        testComplete();
+      })
+      .done();
+  });
+
+  it("formats nice error", (testComplete) => {
+    var druidRequester = druidRequesterFactory({
+      host: 'a.druid.host',
+    });
+
+    nock('http://a.druid.host:8082')
+      .post('/druid/v2/', {
+        "queryType": "groupBy",
+        "dataSource": 'dsz'
+      })
+      .reply(500, {
+        "error": "Unknown exception",
+        "errorMessage": "Pool was initialized with limit = 0, there are no objects to take.",
+        "errorClass": "java.lang.IllegalStateException",
+        "host": "1132637d4b54:8083"
+      });
+
+    druidRequester({
+      query: {
+        "queryType": "groupBy",
+        "dataSource": 'dsz'
+      }
+    })
+      .then(() => { throw new Error('did not throw') })
+      .catch((e) => {
+        expect(e.message).to.equal('java.lang.IllegalStateException: Pool was initialized with limit = 0, there are no objects to take.');
+        testComplete();
+      })
+      .done();
+  });
+
 });
