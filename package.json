@@ -1,6 +1,6 @@
 {
   "name": "plywood-druid-requester",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Druid requester for Plywood (within node)",
   "keywords": [
     "druid",
