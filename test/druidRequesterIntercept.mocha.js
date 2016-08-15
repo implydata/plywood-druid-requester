@@ -200,6 +200,47 @@ describe("Druid requester static data source", function() {
       .done();
   });
 
+  it('uses requestDecorator for datasource check', (testComplete) => {
+    var druidRequester = druidRequesterFactory({
+      host: 'a.druid.host',
+      requestDecorator: () => {
+        return {
+          headers: {
+            'authorization': 'Basic Auth',
+            'X-My-Headers': 'My Header value'
+          }
+        }
+      }
+    });
+
+    nock('http://a.druid.host:8082', {
+      reqheaders: {
+        'authorization': 'Basic Auth',
+        'X-My-Headers': 'My Header value'
+      }
+    })
+      .post('/druid/v2/', {
+        'queryType': 'topN',
+        'dataSource': 'dsz'
+      })
+      .reply(200, [])
+      .get('/druid/v2/datasources')
+      .reply(200, []);
+
+    druidRequester({
+      query: {
+        'queryType': 'topN',
+        'dataSource': 'dsz'
+      }
+    })
+      .then(() => { throw new Error('expected error was not raised') })
+      .catch((error) => {
+        expect(error.message).to.equal('No such datasource');
+        testComplete();
+      })
+      .done();
+  });
+
   it("formats plain error", (testComplete) => {
     var druidRequester = druidRequesterFactory({
       host: 'a.druid.host',

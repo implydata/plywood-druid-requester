@@ -102,13 +102,41 @@ function requestAsPromise(param: request.Options): Q.Promise<RequestResponse> {
   return deferred.promise;
 }
 
-function failIfNoDatasource(url: string, query: any, timeout: number): Q.Promise<any> {
-  return requestAsPromise({
+function decorateRequest(options: request.OptionsWithUrl, decorator?: DruidRequestDecorator, query?: any, context?: { [k: string]: any }): Q.Promise<request.Options> {
+  var deferred = <Q.Deferred<request.Options>>(Q.defer());
+
+  if (decorator) {
+    var decorationPromise = decorator({
+      method: options.method,
+      url: options.url,
+      query
+    }, context);
+
+    if (decorationPromise) {
+      Q(decorationPromise).then((decoration: Decoration) => {
+        if (decoration.headers) {
+          options.headers = decoration.headers;
+        }
+        deferred.resolve(options);
+      });
+    }
+  } else {
+    deferred.resolve(options);
+  }
+
+  return deferred.promise;
+}
+
+function failIfNoDatasource(url: string, query: any, timeout: number, decorator?: DruidRequestDecorator): Q.Promise<any> {
+  var options = {
     method: "GET",
     url: url + "datasources",
     json: true,
     timeout: timeout
-  })
+  };
+
+  return decorateRequest(options, decorator)
+    .then(requestAsPromise)
     .then((result: RequestResponse): any => {
       var response = result.response;
       var body = result.body;
@@ -160,7 +188,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         url = urlBuilder(location);
-        var options: request.Options;
+        var options: request.OptionsWithUrl;
         if (queryType === "status") {
           options = {
             method: "GET",
@@ -187,24 +215,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           }
         }
 
-        if (requestDecorator) {
-          var decorationPromise = requestDecorator({
-            method: options.method,
-            url: options.url,
-            query
-          }, context['decoratorContext']);
-
-          if (decorationPromise) {
-            return Q(decorationPromise).then((decoration: Decoration) => {
-              if (decoration.headers) {
-                options.headers = decoration.headers;
-              }
-              return options;
-            });
-          }
-        }
-
-        return options;
+        return decorateRequest(options, requestDecorator, query, context['decoratorContext']);
       })
       .then(requestAsPromise)
       .then((result: RequestResponse) => {
@@ -239,7 +250,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           if (Array.isArray(body.dimensions) && !body.dimensions.length &&
               Array.isArray(body.metrics) && !body.metrics.length) {
 
-            return failIfNoDatasource(url, query, timeout).then((): any => {
+            return failIfNoDatasource(url, query, timeout, requestDecorator).then((): any => {
               err = new Error("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
               err.query = query;
               throw err;
@@ -247,7 +258,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           }
         } else if (queryType !== "sourceList" && queryType !== "status") {
           if (Array.isArray(body) && !body.length) {
-            return failIfNoDatasource(url, query, timeout).then((): any[] => {
+            return failIfNoDatasource(url, query, timeout, requestDecorator).then((): any[] => {
               return [];
             });
           }
