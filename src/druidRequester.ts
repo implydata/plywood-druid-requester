@@ -19,7 +19,7 @@
 /// <reference path="../typings/locator.d.ts" />
 
 import * as request from 'request';
-import * as Q from 'q';
+import * as Q from 'q-tsc';
 
 export interface DruidRequesterParameters {
   locator?: Locator.PlywoodLocator;

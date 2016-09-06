@@ -18,14 +18,13 @@
   "main": "build/druidRequester.js",
   "typings": "build/druidRequester.d.ts",
   "scripts": {
-    "prepublish": "./prepublish"
+    "compile": "./compile"
   },
   "dependencies": {
-    "q": "1.4.1",
+    "q-tsc": "1.4.1-rev1",
     "request": "2.74.0"
   },
   "devDependencies": {
-    "@types/q": "0.0.28",
     "@types/request": "0.0.28",
     "chai": "3.5.0",
     "mocha": "3.0.2",
