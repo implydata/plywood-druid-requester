@@ -17,19 +17,26 @@
   },
   "main": "build/druidRequester.js",
   "typings": "build/druidRequester.d.ts",
+  "files": [
+    "build/",
+    "typings/"
+  ],
   "scripts": {
+    "postinstall": "node_modules/.bin/tdi",
     "compile": "./compile"
   },
   "dependencies": {
-    "q-tsc": "1.4.1-rev1",
-    "request": "2.74.0"
+    "q": "1.4.1",
+    "request": "2.75.0"
   },
   "devDependencies": {
-    "@types/request": "0.0.28",
+    "@types/mocha": "2.2.32",
+    "@types/node": "6.0.41",
     "chai": "3.5.0",
-    "mocha": "3.0.2",
+    "mocha": "3.1.0",
     "nock": "8.0.0",
-    "tslint": "3.14.0",
-    "typescript": "2.0.0"
+    "tdi": "0.1.1",
+    "tslint": "3.15.1",
+    "typescript": "2.0.3"
   }
 }
