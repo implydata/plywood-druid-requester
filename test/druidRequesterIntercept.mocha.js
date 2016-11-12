@@ -253,7 +253,7 @@ describe("Druid requester static data source", function() {
     })
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
-        expect(e.message).to.equal('java.lang.IllegalStateException: Pool was initialized with limit = 0, there are no objects to take.');
+        expect(e.message).to.equal('Unknown exception: Pool was initialized with limit = 0, there are no objects to take.');
         testComplete();
       })
       .done();

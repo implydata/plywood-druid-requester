@@ -217,7 +217,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           } else {
             var message: string;
             if (body && typeof body.error === 'string') {
-              message = body.errorClass || body.error;
+              message = body.error;
               if (typeof body.errorMessage === 'string') {
                 message = `${message}: ${body.errorMessage}`;
               }
@@ -255,7 +255,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
 
         return body;
       }, (err) => {
-        if (err.message === "ETIMEDOUT") err = new Error("timeout");
+        if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
         err.query = query;
         throw err;
       });
