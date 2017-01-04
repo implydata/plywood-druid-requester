@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-var { expect } = require("chai");
-var Q = require("q");
+const { expect } = require("chai");
+let Promise = require("any-promise");
 
-var { druidRequesterFactory } = require('../build/druidRequester');
+let { druidRequesterFactory } = require('../build/druidRequester');
 
-var nock = require('nock');
+let nock = require('nock');
 
 
 describe("Druid requester static data source", function() {
 
-  it("works with a simple intercept GET", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("works with a simple intercept GET", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host'
     });
 
@@ -37,7 +37,7 @@ describe("Druid requester static data source", function() {
         measures: []
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "introspect",
         "dataSource": 'dsz'
@@ -48,13 +48,11 @@ describe("Druid requester static data source", function() {
           dimensions: ['lol'],
           measures: []
         });
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("works with a simple intercept POST", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("works with a simple intercept POST", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host'
     });
 
@@ -67,7 +65,7 @@ describe("Druid requester static data source", function() {
         lol: 'data'
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "topN",
         "dataSource": 'dsz'
@@ -77,18 +75,16 @@ describe("Druid requester static data source", function() {
         expect(res).to.deep.equal({
           lol: 'data'
         });
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("works with a different URL builder", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("works with a different URL builder", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'localhost',
       urlBuilder: (location) => {
         return `http://${location.hostname}/proxy`
       }
-    })
+    });
 
     nock('http://localhost')
       .post('/proxy/druid/v2/', {
@@ -99,7 +95,7 @@ describe("Druid requester static data source", function() {
         lol: 'data'
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         'queryType': 'topN',
         'dataSource': 'dsz'
@@ -109,13 +105,11 @@ describe("Druid requester static data source", function() {
         expect(res).to.deep.equal({
           lol: 'data'
         });
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("works with simple headers POST (sync)", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("works with simple headers POST (sync)", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
       requestDecorator: () => {
         return {
@@ -141,7 +135,7 @@ describe("Druid requester static data source", function() {
         lol: 'data'
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "topN",
         "dataSource": 'dsz'
@@ -151,16 +145,14 @@ describe("Druid requester static data source", function() {
         expect(res).to.deep.equal({
           lol: 'data'
         });
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("works with simple headers POST (async)", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("works with simple headers POST (async)", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
       requestDecorator: () => {
-        return Q.delay(30).then(() => {
+        return Promise.resolve(() => {
           return {
             headers: {
               'authorization': 'Basic Auth',
@@ -185,7 +177,7 @@ describe("Druid requester static data source", function() {
         lol: 'data'
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "topN",
         "dataSource": 'dsz'
@@ -195,13 +187,11 @@ describe("Druid requester static data source", function() {
         expect(res).to.deep.equal({
           lol: 'data'
         });
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("formats plain error", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("formats plain error", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
     });
 
@@ -214,7 +204,7 @@ describe("Druid requester static data source", function() {
         "error": "Opps"
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "groupBy",
         "dataSource": 'dsz'
@@ -223,13 +213,11 @@ describe("Druid requester static data source", function() {
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
         expect(e.message).to.equal('Opps');
-        testComplete();
-      })
-      .done();
+      });
   });
 
-  it("formats nice error", (testComplete) => {
-    var druidRequester = druidRequesterFactory({
+  it("formats nice error", () => {
+    let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
     });
 
@@ -245,7 +233,7 @@ describe("Druid requester static data source", function() {
         "host": "1132637d4b54:8083"
       });
 
-    druidRequester({
+    return druidRequester({
       query: {
         "queryType": "groupBy",
         "dataSource": 'dsz'
@@ -254,9 +242,7 @@ describe("Druid requester static data source", function() {
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
         expect(e.message).to.equal('Unknown exception: Pool was initialized with limit = 0, there are no objects to take.');
-        testComplete();
-      })
-      .done();
+      });
   });
 
 });

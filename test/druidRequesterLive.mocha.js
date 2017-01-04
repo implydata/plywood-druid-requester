@@ -15,35 +15,34 @@
  * limitations under the License.
  */
 
-var { expect } = require("chai");
+const { expect } = require("chai");
+const toArray = require("stream-to-array");
 
-var { druidRequesterFactory } = require('../build/druidRequester');
+let { druidRequesterFactory } = require('../build/druidRequester');
 
-var info = require('./info');
+let info = require('./info');
 
-var druidRequester = druidRequesterFactory({
+let druidRequester = druidRequesterFactory({
   host: info.liveDruidHost
 });
 
 describe("Druid requester live data source", function() {
 
-  it("introspects single dataSource", (testComplete) => {
-    druidRequester({
+  it("introspects single dataSource", () => {
+    return toArray(druidRequester({
       query: {
         "queryType": "introspect",
         "dataSource": 'wikipedia'
       }
-    })
+    }))
       .then((res) => {
-        expect(res.dimensions).be.an('Array');
-        expect(res.metrics).be.an('Array');
-        testComplete();
-      })
-      .done();
+        expect(res[0].dimensions).be.an('Array');
+        expect(res[0].metrics).be.an('Array');
+      });
   });
 
-  it("introspects multi dataSource", (testComplete) => {
-    druidRequester({
+  it("introspects multi dataSource", () => {
+    return toArray(druidRequester({
       query: {
         "queryType": "introspect",
         "dataSource": {
@@ -51,13 +50,12 @@ describe("Druid requester live data source", function() {
           "dataSources": ['wikipedia', 'wikipedia']
         }
       }
-    })
+    }))
       .then((res) => {
-        expect(res.dimensions).be.an('Array');
-        expect(res.metrics).be.an('Array');
-        testComplete();
-      })
-      .done();
+        expect(res[0].dimensions).be.an('Array');
+        expect(res[0].metrics).be.an('Array');
+      });
   });
+
 });
 

@@ -5,6 +5,6 @@ declare module Requester {
   }
 
   interface PlywoodRequester<T> {
-    (request: DatabaseRequest<T>): Q.Promise<any>;
+    (request: DatabaseRequest<T>): any;
   }
 }
