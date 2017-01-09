@@ -16,6 +16,7 @@
  */
 
 const { expect } = require("chai");
+const toArray = require("stream-to-array");
 let Promise = require("any-promise");
 
 let { druidRequesterFactory } = require('../build/druidRequester');
@@ -23,7 +24,7 @@ let { druidRequesterFactory } = require('../build/druidRequester');
 let nock = require('nock');
 
 
-describe("Druid requester static data source", function() {
+describe("Druid requester intercept", function() {
 
   it("works with a simple intercept GET", () => {
     let druidRequester = druidRequesterFactory({
@@ -37,14 +38,15 @@ describe("Druid requester static data source", function() {
         measures: []
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
         "queryType": "introspect",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then((res) => {
-        expect(res).to.deep.equal({
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
           dimensions: ['lol'],
           measures: []
         });
@@ -61,18 +63,23 @@ describe("Druid requester static data source", function() {
         "queryType": "topN",
         "dataSource": 'dsz'
       })
-      .reply(200, {
-        lol: 'data'
-      });
+      .reply(200, [{
+        timestamp: '2015-01-01T01:01:01Z',
+        result: [{
+          lol: 'data'
+        }]
+      }]);
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
         "queryType": "topN",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then((res) => {
-        expect(res).to.deep.equal({
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
+          timestamp: new Date('2015-01-01T01:01:01Z'),
           lol: 'data'
         });
       });
@@ -88,21 +95,22 @@ describe("Druid requester static data source", function() {
 
     nock('http://localhost')
       .post('/proxy/druid/v2/', {
-        'queryType': 'topN',
+        'queryType': 'topNz',
         'dataSource': 'dsz'
       })
       .reply(200, {
         lol: 'data'
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
-        'queryType': 'topN',
+        'queryType': 'topNz',
         'dataSource': 'dsz'
       }
-    })
+    }))
       .then((res) => {
-        expect(res).to.deep.equal({
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
           lol: 'data'
         });
       });
@@ -128,21 +136,22 @@ describe("Druid requester static data source", function() {
       }
     })
       .post('/druid/v2/', {
-        "queryType": "topN",
+        "queryType": "topNz",
         "dataSource": 'dsz'
       })
       .reply(200, {
         lol: 'data'
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
-        "queryType": "topN",
+        "queryType": "topNz",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then((res) => {
-        expect(res).to.deep.equal({
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
           lol: 'data'
         });
       });
@@ -170,21 +179,22 @@ describe("Druid requester static data source", function() {
       }
     })
       .post('/druid/v2/', {
-        "queryType": "topN",
+        "queryType": "topNz",
         "dataSource": 'dsz'
       })
       .reply(200, {
         lol: 'data'
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
-        "queryType": "topN",
+        "queryType": "topNz",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then((res) => {
-        expect(res).to.deep.equal({
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
           lol: 'data'
         });
       });
@@ -204,12 +214,12 @@ describe("Druid requester static data source", function() {
         "error": "Opps"
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
         "queryType": "groupBy",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
         expect(e.message).to.equal('Opps');
@@ -233,12 +243,12 @@ describe("Druid requester static data source", function() {
         "host": "1132637d4b54:8083"
       });
 
-    return druidRequester({
+    return toArray(druidRequester({
       query: {
         "queryType": "groupBy",
         "dataSource": 'dsz'
       }
-    })
+    }))
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
         expect(e.message).to.equal('Unknown exception: Pool was initialized with limit = 0, there are no objects to take.');
