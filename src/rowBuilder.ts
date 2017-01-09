@@ -14,157 +14,121 @@
  * limitations under the License.
  */
 
-import { Transform } from "stream";
-import * as Assembler from "stream-json/utils/Assembler";
+import { Transform, TransformOptions } from "stream";
+import { Assembler, ObjectIndex } from "./assembler";
 
-type RowBuilderState = 'init' | 'tso-array' | 'tso' | 'tso-ts' | 'result-array' | 'result'; // tso = time stamped object
+export interface RowBuilderOptions extends TransformOptions {
+  queryType: string;
+  timestamp: string;
+}
 
 export class RowBuilder extends Transform {
-  private _curTimestamp: Date;
-  private _curResult: any;
-  private _curKey: string;
-  private _curAssembler: Assembler;
-  private _curState: RowBuilderState;
-  private _stateStack: RowBuilderState[];
+  private assembler: Assembler;
+  private flushRoot: boolean;
+  private metaEmitted: boolean;
+  public totallyEmpty: boolean;
 
-  constructor(options: any) {
+  constructor(options: RowBuilderOptions) {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    // this._writableState.objectMode = true;
-    // this._readableState.objectMode = true;
+    this.totallyEmpty = true;
+    const { queryType, timestamp = 'timestamp' } = options;
 
-    this._curState = 'init';
-    this._stateStack = [];
-    this._curResult = null;
-    this._curKey = null;
-  }
+    let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
+    let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
+      this.totallyEmpty = false;
+      return true;
+    };
 
-  private _pushState(newState: RowBuilderState): void {
-    this._stateStack.push(this._curState);
-    this._curState = newState;
-  }
+    switch (queryType) {
+      case 'timeseries':
+      case 'timeBoundary':
+        onArrayPush = (value, stack, keyStack) => {
+          if (keyStack.length === 0) {
+            let result = value.result;
+            if (timestamp) result[timestamp] = new Date(value.timestamp);
+            this.push(result);
+            return false;
+          }
+          return true;
+        };
+        break;
 
-  private _popState(): void {
-    this._curState = this._stateStack.pop();
+      case 'topN':
+        onArrayPush = (value, stack, keyStack) => {
+          if (keyStack.length === 2 && keyStack[1] === 'result') {
+            if (timestamp) value.timestamp = new Date(stack[1].timestamp);
+            this.push(value);
+            return false;
+          }
+          return true;
+        };
+        break;
+
+      case 'groupBy':
+        onArrayPush = (value, stack, keyStack) => {
+          if (keyStack.length === 0) {
+            let event = value.event;
+            if (timestamp) event[timestamp] = new Date(value.timestamp);
+            this.push(event);
+            return false;
+          }
+          return true;
+        };
+        break;
+
+      case 'select':
+        onArrayPush = (value, stack, keyStack) => {
+          // keyStack = [0, result, events]
+          if (keyStack.length === 3 && keyStack[2] === 'events') {
+            let event = value.event;
+            if (timestamp) event[timestamp] = new Date(event.timestamp);
+            this.push(event);
+            return false;
+          }
+          return true;
+        };
+        onKeyValueAdd = (key, value) => {
+          this.totallyEmpty = false;
+          if (key !== 'pagingIdentifiers') return true;
+          if (this.metaEmitted) return false;
+          this.emit('meta', { pagingIdentifiers: value });
+          this.metaEmitted = true;
+          return false;
+        };
+        break;
+
+      case 'segmentMetadata':
+        onArrayPush = (value, stack, keyStack) => {
+          if (keyStack.length === 0) {
+            this.push(value);
+            return false;
+          }
+          return true;
+        };
+        break;
+
+      default:
+        this.flushRoot = true;
+    }
+
+    this.assembler = new Assembler({
+      onArrayPush,
+      onKeyValueAdd
+    });
   }
 
   protected _transform(chunk: any, encoding: any, callback: any) {
-    if (this._curAssembler) {
-      if (this._curAssembler[chunk.name]) {
-        this._curAssembler[chunk.name](chunk.value);
-      }
-
-      if (!this._curAssembler.stack.length) {
-        this._curResult[this._curKey] = chunk.value;
-        this._curAssembler = null;
-      }
-
-      callback();
-      return;
-    }
-
-    switch (chunk.name) {
-      case 'startArray':
-        switch (this._curState) {
-          case 'init':
-            this._pushState('tso-array');
-            break;
-
-          case 'tso':
-            this._pushState('result-array');
-            break;
-
-          default:
-            throw new Error(`oh noes ${chunk.name} in ${this._curState}`);
-        }
-        break;
-
-      case 'endArray':
-        switch (this._curState) {
-          case 'tso-array':
-          case 'result-array':
-            this._popState();
-            break;
-
-          default:
-            throw new Error(`oh noes ${chunk.name} in ${this._curState}`);
-        }
-        break;
-
-      case 'startObject':
-        switch (this._curState) {
-          case 'tso-array':
-            this._pushState('tso');
-            break;
-
-          case 'tso':
-          case 'result-array':
-            this._pushState('result');
-            this._curResult = {};
-            break;
-
-          case 'result':
-            this._curAssembler = new Assembler();
-            this._curAssembler[chunk.name](chunk.value);
-            break;
-
-          default:
-            throw new Error(`oh noes ${chunk.name} in ${this._curState}`);
-        }
-        break;
-
-      case 'endObject':
-        switch (this._curState) {
-          case 'tso':
-            this._popState();
-            break;
-
-          case 'result':
-            this.push({ timestamp: this._curTimestamp, result: this._curResult });
-            this._popState();
-            this._curResult = null;
-            break;
-
-          default:
-            throw new Error(`oh noes ${chunk.name} in ${this._curState}`);
-        }
-        break;
-
-      case 'keyValue':
-        switch (this._curState) {
-          case 'tso':
-            if (chunk.value === 'timestamp') {
-              this._pushState('tso-ts');
-            }
-            break;
-
-          default:
-            this._curKey = chunk.value;
-        }
-        break;
-
-      case 'stringValue':
-      case 'nullValue':
-      case 'trueValue':
-      case 'falseValue':
-        switch (this._curState) {
-          case 'tso-ts':
-            this._curTimestamp = new Date(chunk.value);
-            this._popState();
-            break;
-
-          default:
-            this._curResult[this._curKey] = chunk.value;
-        }
-        break;
-
-      case 'numberValue':
-        this._curResult[this._curKey] = parseFloat(chunk.value);
-        break;
-    }
-
+    this.assembler.process(chunk);
     callback();
-  };
+  }
+
+  protected _flush(callback: any) {
+    if (this.flushRoot) {
+      this.push(this.assembler.current);
+    }
+    callback();
+  }
 }
 

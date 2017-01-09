@@ -109,8 +109,9 @@ describe("Druid requester static data source", function() {
         }
       }))
         .then((res) => {
-          expect(res).be.an('Array');
-          expect(res.indexOf('wikipedia') > -1).to.equal(true);
+          expect(res.length).to.equal(1);
+          expect(res[0]).be.an('Array');
+          expect(res[0].indexOf('wikipedia') > -1).to.equal(true);
         })
     });
   });
@@ -125,11 +126,12 @@ describe("Druid requester static data source", function() {
         }
       }))
         .then((res) => {
+          expect(res.length).to.equal(1);
           expect(res[0].version).to.equal(info.druidVersion);
         })
     });
 
-    it("gets timeBoundary", () => {
+    it("works with timeBoundary", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "timeBoundary",
@@ -138,8 +140,13 @@ describe("Druid requester static data source", function() {
       }))
         .then((res) => {
           expect(res.length).to.equal(1);
-          expect(isNaN(new Date(res[0].result.maxTime))).to.equal(false);
-          expect(isNaN(new Date(res[0].result.minTime))).to.equal(false);
+          expect(res).to.deep.equal([
+            {
+              "maxTime": "2015-09-12T23:59:00.000Z",
+              "minTime": "2015-09-12T00:46:00.000Z",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            }
+          ]);
         })
     });
 
@@ -159,33 +166,23 @@ describe("Druid requester static data source", function() {
           expect(res.length).to.equal(5);
           expect(res).to.deep.equal([
             {
-              "result": {
-                "Count": 2662
-              },
+              "Count": 2662,
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
-              "result": {
-                "Count": 11391
-              },
+              "Count": 11391,
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             },
             {
-              "result": {
-                "Count": 10986
-              },
+              "Count": 10986,
               "timestamp": new Date('2015-09-12T02:00:00.000Z')
             },
             {
-              "result": {
-                "Count": 8109
-              },
+              "Count": 8109,
               "timestamp": new Date('2015-09-12T03:00:00.000Z')
             },
             {
-              "result": {
-                "Count": 8206
-              },
+              "Count": 8206,
               "timestamp": new Date('2015-09-12T04:00:00.000Z')
             }
           ]);
@@ -213,52 +210,40 @@ describe("Druid requester static data source", function() {
           expect(res.length).to.equal(6);
           expect(res).deep.to.equal([
             {
-              "result": {
-                "RowCount": 317,
-                "page": "Jeremy Corbyn"
-              },
+              "RowCount": 317,
+              "page": "Jeremy Corbyn",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 255,
-                "page": "User:Cyde/List of candidates for speedy deletion/Subpage"
-              },
+              "RowCount": 255,
+              "page": "User:Cyde/List of candidates for speedy deletion/Subpage",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 228,
-                "page": "Wikipedia:Administrators' noticeboard/Incidents"
-              },
+              "RowCount": 228,
+              "page": "Wikipedia:Administrators' noticeboard/Incidents",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 186,
-                "page": "Wikipedia:Vandalismusmeldung"
-              },
+              "RowCount": 186,
+              "page": "Wikipedia:Vandalismusmeldung",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 163,
-                "page": "Total Drama Presents: The Ridonculous Race"
-              },
+              "RowCount": 163,
+              "page": "Total Drama Presents: The Ridonculous Race",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 146,
-                "page": "Wikipedia:Administrator intervention against vandalism"
-              },
+              "RowCount": 146,
+              "page": "Wikipedia:Administrator intervention against vandalism",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
             }
           ]);
         })
     });
 
-    it.only("works with granularity topN", () => {
+    it("works with granularity topN", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "topN",
@@ -279,31 +264,23 @@ describe("Druid requester static data source", function() {
           expect(res.length).to.equal(4);
           expect(res).deep.to.equal([
             {
-              "result": {
-                "RowCount": 10,
-                "page": "Israel Ballet"
-              },
+              "RowCount": 10,
+              "page": "Israel Ballet",
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 10,
-                "page": "POOP"
-              },
+              "RowCount": 10,
+              "page": "POOP",
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 26,
-                "page": "Campeonato Mundial de Voleibol Femenino Sub-20 de 2015"
-              },
+              "RowCount": 26,
+              "page": "Campeonato Mundial de Voleibol Femenino Sub-20 de 2015",
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             },
             {
-              "result": {
-                "RowCount": 22,
-                "page": "Flüchtlingskrise in Europa 2015"
-              },
+              "RowCount": 22,
+              "page": "Flüchtlingskrise in Europa 2015",
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             }
           ]);
@@ -329,24 +306,168 @@ describe("Druid requester static data source", function() {
                 "dimension": "page"
               }
             ],
-            "limit": 10,
+            "limit": 5,
             "type": "default"
           }
         }
       }))
         .then((res) => {
           expect(res.length).to.equal(5);
+          expect(res).to.deep.equal([
+            {
+              "RowCount": 1,
+              "page": "!T.O.O.H.!",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 2,
+              "page": "\"The Secret Life of...\"",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 2,
+              "page": "'''Kertomus Venetsiasta''' 1977",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 1,
+              "page": "'Ajde Jano",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 1,
+              "page": "'Alî Sharî'atî",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            }
+          ]);
         })
     });
 
     it("works with regular select", () => {
-      return toArray(druidRequester({
+      const requester = druidRequester({
         query: {
-          // ...
+          "queryType": "select",
+          "dataSource": "wikipedia",
+          "dimensions": [
+            "page"
+          ],
+          "granularity": "all",
+          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
+          "metrics": [
+            "count",
+            "added"
+          ],
+          "pagingSpec": {
+            "pagingIdentifiers": {},
+            "threshold": 4
+          }
         }
-      }))
+      });
+
+      let seenMeta = false;
+      requester.on('meta', (meta) => {
+        seenMeta = true;
+        expect(meta).to.deep.equal({
+          "pagingIdentifiers": {
+            "wikipedia_2015-09-12T00:00:00.000Z_2015-09-12T02:00:00.000Z_2016-11-12T01:38:23.915Z": 3
+          }
+        });
+      });
+
+      return toArray(requester)
         .then((res) => {
-          expect(res.length).to.equal(5);
+          expect(seenMeta).to.equal(true);
+          expect(res.length).to.equal(4);
+          expect(res).to.deep.equal([
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Israel Ballet",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 213,
+              "count": 1,
+              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Angelika Wende",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Talk:Economic growth",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            }
+          ]);
+        })
+    });
+
+    it("works with granularity select", () => {
+      const requester = druidRequester({
+        query: {
+          "queryType": "select",
+          "dataSource": "wikipedia",
+          "dimensions": [
+            "page"
+          ],
+          "granularity": "hour",
+          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
+          "metrics": [
+            "count",
+            "added"
+          ],
+          "pagingSpec": {
+            "pagingIdentifiers": {},
+            "threshold": 2
+          }
+        }
+      });
+
+      let seenMeta = false;
+      requester.on('meta', (meta) => {
+        seenMeta = true;
+        expect(meta).to.deep.equal({
+          "pagingIdentifiers": {
+            "wikipedia_2015-09-12T00:00:00.000Z_2015-09-12T02:00:00.000Z_2016-11-12T01:38:23.915Z": 1
+          }
+        });
+      });
+
+      return toArray(requester)
+        .then((res) => {
+          expect(seenMeta).to.equal(true);
+          expect(res.length).to.equal(4);
+          expect(res).to.deep.equal([
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Israel Ballet",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 213,
+              "count": 1,
+              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
+              "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 12,
+              "count": 1,
+              "page": "عملية بوجينكا",
+              "timestamp": new Date('2015-09-12T01:00:00.000Z')
+            },
+            {
+              "added": 39,
+              "count": 1,
+              "page": "بوليطية",
+              "timestamp": new Date('2015-09-12T01:00:00.000Z')
+            }
+          ]);
         })
     });
 
@@ -372,15 +493,69 @@ describe("Druid requester static data source", function() {
               "type": "quantile"
             }
           ],
-          "intervals": ["2015-09-12T00:00:00/2015-09-13T00:00:00"]
+          "intervals": ["2015-09-12T00:00:00/2015-09-12T02:00:00"]
         }
       }))
         .then((res) => {
-          expect(res.length).to.equal(24);
+          expect(res.length).to.equal(2);
+          expect(res).deep.to.equal([
+            {
+              "!H_P95": {
+                "breaks": [
+                  -19985.333984375,
+                  -499,
+                  18987.333984375,
+                  38473.66796875,
+                  57960,
+                  77446.3359375,
+                  96932.671875,
+                  116419
+                ],
+                "counts": [
+                  0,
+                  2677,
+                  2,
+                  1,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "Count": 2662,
+              "P95": 92.884995,
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "!H_P95": {
+                "breaks": [
+                  -28350.5,
+                  -498,
+                  27354.5,
+                  55207,
+                  83059.5,
+                  110912,
+                  138764.5,
+                  166617
+                ],
+                "counts": [
+                  0,
+                  11429,
+                  8,
+                  2,
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "Count": 11391,
+              "P95": 136.41568,
+              "timestamp": new Date('2015-09-12T01:00:00.000Z')
+            }
+          ]);
         })
     });
 
-    it("works with regular time series in the far future", () => {
+    it("works with regular timeseries in the far future", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "timeseries",
@@ -397,7 +572,7 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it("works with regular time series in the far future with invalid data source", () => {
+    it("works with regular timeseries in the far future with invalid data source", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "timeseries",
@@ -416,6 +591,57 @@ describe("Druid requester static data source", function() {
           expect(err.message).to.equal("No such datasource");
         })
     });
+
+    it("works with segmentMetadata (merge)", () => {
+      return toArray(druidRequester({
+        query: {
+          queryType: "segmentMetadata",
+          dataSource: "wikipedia",
+          merge: true,
+          analysisTypes: [],
+          lenientAggregatorMerge: true
+        }
+      }))
+        .then((res) => {
+          expect(res.length).to.equal(1);
+          expect(Object.keys(res[0].columns)).to.deep.equal([
+            "__time",
+            "added",
+            "channel",
+            "cityName",
+            "comment",
+            "commentLength",
+            "commentLengthStr",
+            "count",
+            "countryIsoCode",
+            "countryName",
+            "deleted",
+            "delta",
+            "deltaBucket100",
+            "deltaByTen",
+            "delta_hist",
+            "isAnonymous",
+            "isMinor",
+            "isNew",
+            "isRobot",
+            "isUnpatrolled",
+            "max_delta",
+            "metroCode",
+            "min_delta",
+            "namespace",
+            "page",
+            "page_unique",
+            "regionIsoCode",
+            "regionName",
+            "sometimeLater",
+            "user",
+            "userChars",
+            "user_theta",
+            "user_unique"
+          ]);
+        })
+    });
+
   });
 
 

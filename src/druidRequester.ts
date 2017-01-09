@@ -17,10 +17,12 @@
 
 /// <reference path="../typings/requester.d.ts" />
 
-import { Readable } from 'stream';
+import { Readable, PassThrough } from 'stream';
 import * as Promise from 'any-promise';
 import * as request from 'request';
+import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-any';
+import * as concat from 'concat-stream';
 import * as Agent from 'socks5-http-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
 import { RowBuilder } from './rowBuilder';
@@ -187,16 +189,13 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
       });
   }
 
-  return (req): Readable => {
+  return (req): NodeJS.ReadableStream => {
     let context = req.context || {};
     let query = req.query;
     let { queryType, intervals } = query;
 
-    let stream = new Readable({
-      objectMode: true,
-      read: function() {
-        //connection && connection.resume();
-      }
+    let stream = new PassThrough({
+      objectMode: true
     });
 
     // Little hack: allow these special intervals to perform a query-less return
@@ -292,80 +291,91 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           },
           timeout: timeout
         })
+          .on('error', (err: any) => {
+            if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
+            err.query = query;
+            stream.emit('error', err);
+            stream.push(null);
+          })
           .on('response', (response) => {
             if (response.statusCode !== 200) {
-              stream.emit('error', new Error('bad status code'));
-              stream.push(null);
+              response.on('error', (err: any) => {
+                err.query = query;
+                stream.emit('error', err);
+                stream.push(null);
+              });
+
+              response.pipe(concat((resp: string) => {
+                let error: any;
+                try {
+                  const body = JSON.parse(resp);
+                  if (body && body.error === "Query timeout") {
+                    error = new Error("timeout");
+                  } else {
+                    let message: string;
+                    if (body && typeof body.error === 'string') {
+                      message = body.error;
+                      if (typeof body.errorMessage === 'string') {
+                        message = `${message}: ${body.errorMessage}`;
+                      }
+                    } else {
+                      message = `Bad status code (${response.statusCode})`;
+                    }
+                    error = new Error(message);
+                    error.query = query;
+                    if (body && typeof body.host === 'string') error.host = body.host;
+                  }
+                } catch (e) {
+                  error = new Error("bad response");
+                }
+
+                stream.emit('error', error);
+                stream.push(null);
+              }));
               return;
             }
 
-            response.on('data', (c: any) => console.log('c', c.toString()));
-            response.on('end', () => console.log('end'));
+            // response.on('data', (c: any) => console.log('c', c.toString()));
+            // response.on('end', () => console.log('end'));
 
-            const rq = response
+            const rowBuilder = new RowBuilder({
+              queryType: query.queryType,
+              timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'
+            });
+
+            rowBuilder.on('meta', (meta: any) => {
+              stream.emit('meta', meta);
+            });
+
+            rowBuilder.on('end', () => {
+              if (!rowBuilder.totallyEmpty) {
+                stream.end();
+                return;
+              }
+
+              failIfNoDatasource(url, query, timeout)
+                .then(
+                  (): any => {
+                    stream.end()
+                  },
+                  (e) => {
+                    stream.emit('error', e);
+                    stream.end()
+                  }
+                );
+            });
+
+            response
               .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
-              .pipe(new RowBuilder({}));
+              .pipe(rowBuilder)
+              .pipe(stream, { end: false });
 
-            rq.on('error', (e: any) => stream.emit('error', e));
-            rq.on('data', (c: any) => stream.push(c));
-            rq.on('end', () => stream.push(null));
+            // rq.on('error', (e: any) => stream.emit('error', e));
+            // rq.on('data', (c: any) => stream.push(c));
+            // rq.on('end', () => stream.push(null));
           });
 
       });
-      /*
-      .then((options: request.Options) => {
-        let response = result.response;
-        let body = result.body;
-        let err: any;
-        if (response.statusCode !== 200) {
-          if (body && body.error === "Query timeout") {
-            err = new Error("timeout");
-          } else {
-            let message: string;
-            if (body && typeof body.error === 'string') {
-              message = body.error;
-              if (typeof body.errorMessage === 'string') {
-                message = `${message}: ${body.errorMessage}`;
-              }
-            } else {
-              message = `Bad status code (${response.statusCode})`;
-            }
-            err = new Error(message);
-            err.query = query;
-            if (body && typeof body.host === 'string') err.host = body.host;
-          }
-          throw err;
-        }
-
-        if (typeof body !== 'object') {
-          throw new Error("bad response");
-        }
-
-        if (queryType === "introspect") {
-          if (Array.isArray(body.dimensions) && !body.dimensions.length &&
-              Array.isArray(body.metrics) && !body.metrics.length) {
-
-            return failIfNoDatasource(url, query, timeout).then((): any => {
-              err = new Error("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
-              err.query = query;
-              throw err;
-            });
-          }
-        } else if (queryType !== "sourceList" && queryType !== "status") {
-          if (Array.isArray(body) && !body.length) {
-            return failIfNoDatasource(url, query, timeout).then((): any[] => {
-              return [];
-            });
-          }
-        }
-
-        return body;
-      }, (err) => {
-        if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
-        err.query = query;
-        throw err;
-      });
-      */
 
     return stream;
   };
