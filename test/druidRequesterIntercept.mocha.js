@@ -161,12 +161,10 @@ describe("Druid requester intercept", function() {
     let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
       requestDecorator: () => {
-        return Promise.resolve(() => {
-          return {
-            headers: {
-              'authorization': 'Basic Auth',
-              'X-My-Headers': 'My Header value'
-            }
+        return Promise.resolve({
+          headers: {
+            'authorization': 'Basic Auth',
+            'X-My-Headers': 'My Header value'
           }
         });
       }

@@ -42,6 +42,10 @@ export interface DruidRequesterParameters {
   timeout?: number;
   urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
+  socksHost?: string;
+  socksPort?: number;
+  socksUsername?: string;
+  socksPassword?: string;
 }
 
 export interface DruidUrlBuilder {
@@ -97,34 +101,14 @@ function basicUrlBuilder(location: Location): string {
   return `http://${location.hostname}:${location.port || 8082}`;
 }
 
-interface RequestResponse {
-  response: any;
-  body: any;
-}
-
-// function requestAsPromise(param: request.Options): Promise<RequestResponse> {
-//   return new Promise((resolve, reject) => {
-//     request(param, (err, response, body) => {
-//       if (err) {
-//         reject(err);
-//       } else {
-//         resolve({
-//           response: response,
-//           body: body
-//         });
-//       }
-//     });
-//   });
-// }
-
-interface RequestPromiseWithDecorationOptions {
+interface RequestWithDecorationOptions {
   query: any;
   context?: any;
-  options: requestPromise.OptionsWithUrl;
+  options: request.OptionsWithUrl;
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<any> {
-  let { locator, host, timeout, urlBuilder, requestDecorator } = parameters;
+  let { locator, host, timeout, urlBuilder, requestDecorator, socksHost, socksPort } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
     locator = basicLocator(host);
@@ -133,13 +117,25 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
     urlBuilder = basicUrlBuilder;
   }
 
-  function requestPromiseWithDecoration(opt: RequestPromiseWithDecorationOptions): Promise<any> {
+  let agentClass: any = null;
+  let agentOptions: any = null;
+  if (socksHost || socksPort) {
+    agentClass = Agent;
+    agentOptions = {};
+    if (socksHost) agentOptions.socksHost = socksHost;
+    if (socksPort) agentOptions.socksPort = socksPort;
+    if (parameters.socksUsername) agentOptions.socksUsername = parameters.socksUsername;
+    if (parameters.socksPassword) agentOptions.socksPassword = parameters.socksPassword;
+  }
+
+  function requestOptionsWithDecoration(opt: RequestWithDecorationOptions): Promise<request.OptionsWithUrl> {
     return Promise.resolve()
       .then(() => {
         const { query, context, options } = opt;
-
-        // ToDo: is socks
-        //options.agentClass = Agent;
+        if (agentClass) {
+          options.agentClass = agentClass;
+          options.agentOptions = agentOptions;
+        }
 
         if (requestDecorator) {
           let decorationPromise = requestDecorator({
@@ -152,7 +148,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
             return Promise.resolve(decorationPromise)
               .then((decoration: Decoration) => {
                 if (decoration.headers) {
-                  options.headers = decoration.headers;
+                  Object.assign(options.headers, decoration.headers);
                 }
                 return options;
               });
@@ -160,8 +156,11 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         }
 
         return options;
-      })
-      .then(requestPromise);
+      });
+  }
+
+  function requestPromiseWithDecoration(opt: RequestWithDecorationOptions): Promise<any> {
+    return requestOptionsWithDecoration(opt).then(requestPromise);
   }
 
   function failIfNoDatasource(url: string, query: any, timeout: number): Promise<any> {
@@ -177,15 +176,10 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
     })
       .then((resp): any => {
         if (getDataSourcesFromQuery(query).every((dataSource) => resp.indexOf(dataSource) < 0)) {
-          let err: any = new Error("No such datasource");
-          err.query = query;
-          throw err;
+          throw new Error("No such datasource");
         }
 
         return null;
-      }, (err) => {
-        err.query = query;
-        throw err;
       });
   }
 
@@ -204,6 +198,12 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
         stream.push(null);
       });
       return stream;
+    }
+
+    function streamError(e: Error) {
+      (e as any).query = query;
+      stream.emit('error', e);
+      stream.end();
     }
 
     let url: string;
@@ -227,10 +227,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
                 stream.push(resp);
                 stream.push(null);
               },
-              (reason) => {
-                stream.emit('error', reason);
-                stream.push(null);
-              }
+              streamError
             );
 
           return;
@@ -266,10 +263,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
                 stream.push(resp);
                 stream.push(null);
               },
-              (reason) => {
-                stream.emit('error', reason);
-                stream.push(null);
-              }
+              streamError
             );
 
           return;
@@ -282,98 +276,98 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
           query.context.timeout = timeout;
         }
 
-        request({
-          method: "POST",
-          url: url + "/druid/v2/" + (context['pretty'] ? "?pretty" : ""),
-          body: JSON.stringify(query),
-          headers: {
-            "Content-type": "application/json"
-          },
-          timeout: timeout
+        requestOptionsWithDecoration({
+          query,
+          context,
+          options: {
+            method: "POST",
+            url: url + "/druid/v2/" + (context['pretty'] ? "?pretty" : ""),
+            body: JSON.stringify(query),
+            headers: {
+              "Content-type": "application/json"
+            },
+            timeout: timeout
+          }
         })
-          .on('error', (err: any) => {
-            if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
-            err.query = query;
-            stream.emit('error', err);
-            stream.push(null);
-          })
-          .on('response', (response) => {
-            if (response.statusCode !== 200) {
-              response.on('error', (err: any) => {
-                err.query = query;
-                stream.emit('error', err);
-                stream.push(null);
-              });
+          .then(
+            (options) => {
+              request(options)
+                .on('error', (err: any) => {
+                  if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
+                  streamError(err);
+                })
+                .on('response', (response) => {
+                  if (response.statusCode !== 200) {
+                    response.on('error', streamError);
 
-              response.pipe(concat((resp: string) => {
-                let error: any;
-                try {
-                  const body = JSON.parse(resp);
-                  if (body && body.error === "Query timeout") {
-                    error = new Error("timeout");
-                  } else {
-                    let message: string;
-                    if (body && typeof body.error === 'string') {
-                      message = body.error;
-                      if (typeof body.errorMessage === 'string') {
-                        message = `${message}: ${body.errorMessage}`;
+                    response.pipe(concat((resp: string) => {
+                      let error: any;
+                      try {
+                        const body = JSON.parse(resp);
+                        if (body && body.error === "Query timeout") {
+                          error = new Error("timeout");
+                        } else {
+                          let message: string;
+                          if (body && typeof body.error === 'string') {
+                            message = body.error;
+                            if (typeof body.errorMessage === 'string') {
+                              message = `${message}: ${body.errorMessage}`;
+                            }
+                          } else {
+                            message = `Bad status code (${response.statusCode})`;
+                          }
+                          error = new Error(message);
+                          error.query = query;
+                          if (body && typeof body.host === 'string') error.host = body.host;
+                        }
+                      } catch (e) {
+                        error = new Error("bad response");
                       }
-                    } else {
-                      message = `Bad status code (${response.statusCode})`;
+
+                      streamError(error);
+                    }));
+                    return;
+                  }
+
+                  // response.on('data', (c: any) => console.log('c', c.toString()));
+                  // response.on('end', () => console.log('end'));
+
+                  const rowBuilder = new RowBuilder({
+                    queryType: query.queryType,
+                    timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'
+                  });
+
+                  rowBuilder.on('meta', (meta: any) => {
+                    stream.emit('meta', meta);
+                  });
+
+                  rowBuilder.on('end', () => {
+                    if (!rowBuilder.totallyEmpty) {
+                      stream.end();
+                      return;
                     }
-                    error = new Error(message);
-                    error.query = query;
-                    if (body && typeof body.host === 'string') error.host = body.host;
-                  }
-                } catch (e) {
-                  error = new Error("bad response");
-                }
 
-                stream.emit('error', error);
-                stream.push(null);
-              }));
-              return;
-            }
+                    failIfNoDatasource(url, query, timeout)
+                      .then(
+                        (): any => {
+                          stream.end()
+                        },
+                        streamError
+                      );
+                  });
 
-            // response.on('data', (c: any) => console.log('c', c.toString()));
-            // response.on('end', () => console.log('end'));
+                  response
+                    .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
+                    .pipe(rowBuilder)
+                    .pipe(stream, { end: false });
 
-            const rowBuilder = new RowBuilder({
-              queryType: query.queryType,
-              timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'
-            });
-
-            rowBuilder.on('meta', (meta: any) => {
-              stream.emit('meta', meta);
-            });
-
-            rowBuilder.on('end', () => {
-              if (!rowBuilder.totallyEmpty) {
-                stream.end();
-                return;
-              }
-
-              failIfNoDatasource(url, query, timeout)
-                .then(
-                  (): any => {
-                    stream.end()
-                  },
-                  (e) => {
-                    stream.emit('error', e);
-                    stream.end()
-                  }
-                );
-            });
-
-            response
-              .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
-              .pipe(rowBuilder)
-              .pipe(stream, { end: false });
-
-            // rq.on('error', (e: any) => stream.emit('error', e));
-            // rq.on('data', (c: any) => stream.push(c));
-            // rq.on('end', () => stream.push(null));
-          });
+                  // rq.on('error', (e: any) => stream.emit('error', e));
+                  // rq.on('data', (c: any) => stream.push(c));
+                  // rq.on('end', () => stream.push(null));
+                });
+            },
+            streamError
+          );
 
       });
 

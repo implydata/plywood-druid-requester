@@ -23,7 +23,8 @@ let { druidRequesterFactory } = require('../build/druidRequester');
 let info = require('./info');
 
 let druidRequester = druidRequesterFactory({
-  host: info.liveDruidHost
+  host: info.liveDruidHost,
+  socksHost: 'localhost'
 });
 
 describe("Druid requester live data source", function() {
