@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-/// <reference path="../typings/requester.d.ts" />
-
-import { Readable, PassThrough } from 'stream';
+import { PlywoodRequester, PlywoodLocator, Location, basicLocator } from 'plywood-base-api';
+import { ReadableStream, PassThrough } from 'readable-stream';
 import * as Promise from 'any-promise';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
@@ -26,15 +25,6 @@ import * as concat from 'concat-stream';
 import * as Agent from 'socks5-http-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
 import { RowBuilder } from './rowBuilder';
-
-export interface Location {
-  hostname: string;
-  port?: number;
-}
-
-export interface PlywoodLocator {
-  (): Promise<Location>;
-}
 
 export interface DruidRequesterParameters {
   locator?: PlywoodLocator;
@@ -78,25 +68,6 @@ function getDataSourcesFromQuery(query: any): string[] {
   }
 }
 
-function basicLocator(host: string): PlywoodLocator {
-  let hostnamePort = host.split(':');
-  let hostname: string;
-  let port: number;
-  if (hostnamePort.length > 1) {
-    hostname = hostnamePort[0];
-    port = Number(hostnamePort[1]);
-  } else {
-    hostname = hostnamePort[0];
-    port = 8082;
-  }
-  return () => {
-    return Promise.resolve({
-      hostname: hostname,
-      port: port
-    })
-  }
-}
-
 function basicUrlBuilder(location: Location): string {
   return `http://${location.hostname}:${location.port || 8082}`;
 }
@@ -107,11 +78,11 @@ interface RequestWithDecorationOptions {
   options: request.OptionsWithUrl;
 }
 
-export function druidRequesterFactory(parameters: DruidRequesterParameters): Requester.PlywoodRequester<any> {
+export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
   let { locator, host, timeout, urlBuilder, requestDecorator, socksHost, socksPort } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
-    locator = basicLocator(host);
+    locator = basicLocator(host, 8082);
   }
   if (!urlBuilder) {
     urlBuilder = basicUrlBuilder;
@@ -183,7 +154,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Req
       });
   }
 
-  return (req): NodeJS.ReadableStream => {
+  return (req): ReadableStream => {
     let context = req.context || {};
     let query = req.query;
     let { queryType, intervals } = query;
