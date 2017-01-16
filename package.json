@@ -39,13 +39,13 @@
   },
   "devDependencies": {
     "@types/mocha": "2.2.37",
-    "@types/node": "6.0.58",
+    "@types/node": "7.0.0",
     "chai": "3.5.0",
     "mocha": "3.2.0",
     "nock": "9.0.2",
     "stream-to-array": "2.3.0",
     "tdi": "0.2.14",
     "tslint": "4.3.1",
-    "typescript": "2.1.4"
+    "typescript": "2.1.5"
   }
 }
