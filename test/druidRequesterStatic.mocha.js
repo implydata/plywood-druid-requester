@@ -407,6 +407,62 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("works with regular select with special timestamp", () => {
+      const requester = druidRequester({
+        query: {
+          "queryType": "select",
+          "dataSource": "wikipedia",
+          "dimensions": [
+            "page"
+          ],
+          "granularity": "all",
+          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
+          "metrics": [
+            "count",
+            "added"
+          ],
+          "pagingSpec": {
+            "pagingIdentifiers": {},
+            "threshold": 4
+          }
+        },
+        context: {
+          timestamp: 'time'
+        }
+      });
+
+      return toArray(requester)
+        .then((res) => {
+          expect(res.length).to.equal(4);
+          expect(res).to.deep.equal([
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Israel Ballet",
+              "time": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 213,
+              "count": 1,
+              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
+              "time": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Angelika Wende",
+              "time": new Date('2015-09-12T00:46:00.000Z')
+            },
+            {
+              "added": 0,
+              "count": 1,
+              "page": "Talk:Economic growth",
+              "time": new Date('2015-09-12T00:46:00.000Z')
+            }
+          ]);
+        })
+    });
+
     it("works with granularity select", () => {
       const requester = druidRequester({
         query: {

@@ -83,7 +83,10 @@ export class RowBuilder extends Transform {
           // keyStack = [0, result, events]
           if (keyStack.length === 3 && keyStack[2] === 'events') {
             let event = value.event;
-            if (timestamp) event[timestamp] = new Date(event.timestamp);
+            if (timestamp) {
+              event[timestamp] = new Date(event.timestamp);
+              if (timestamp !== 'timestamp') delete event['timestamp'];
+            }
             this.push(event);
             return false;
           }
