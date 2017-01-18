@@ -189,6 +189,50 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("works with regular timeseries with ignorePrefix", () => {
+      return toArray(druidRequester({
+        query: {
+          "queryType": "timeseries",
+          "dataSource": "wikipedia",
+          "granularity": "hour",
+          "aggregations": [
+            { "type": "count", "name": "Count" },
+            { "type": "doubleSum", "name": "!lol!_a1", "fieldName": "added" },
+            { "type": "doubleSum", "name": "!lol!_a2", "fieldName": "deleted" }
+          ],
+          "intervals": ["2015-09-12T00:00:00/2015-09-12T05:00:00"]
+        },
+        context: {
+          ignorePrefix: '!lol!'
+        }
+      }))
+        .then((res) => {
+          expect(res.length).to.equal(5);
+          expect(res).to.deep.equal([
+            {
+              "Count": 2662,
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "Count": 11391,
+              "timestamp": new Date('2015-09-12T01:00:00.000Z')
+            },
+            {
+              "Count": 10986,
+              "timestamp": new Date('2015-09-12T02:00:00.000Z')
+            },
+            {
+              "Count": 8109,
+              "timestamp": new Date('2015-09-12T03:00:00.000Z')
+            },
+            {
+              "Count": 8206,
+              "timestamp": new Date('2015-09-12T04:00:00.000Z')
+            }
+          ]);
+        })
+    });
+
     it("works with regular topN", () => {
       return toArray(druidRequester({
         query: {

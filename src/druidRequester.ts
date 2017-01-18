@@ -305,7 +305,8 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
                   const rowBuilder = new RowBuilder({
                     queryType: query.queryType,
-                    timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'
+                    timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp',
+                    ignorePrefix: context['ignorePrefix']
                   });
 
                   rowBuilder.on('meta', (meta: any) => {

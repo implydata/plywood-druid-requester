@@ -19,10 +19,22 @@ import { Assembler, ObjectIndex } from "./assembler";
 
 export interface RowBuilderOptions extends TransformOptions {
   queryType: string;
-  timestamp: string;
+  timestamp?: string | null;
+  ignorePrefix?: string | null;
 }
 
 export class RowBuilder extends Transform {
+
+  static cleanupFactory(ignorePrefix: string | null) {
+    if (ignorePrefix == null) return null;
+    const ignorePrefixLength = ignorePrefix.length;
+    return (obj: any) => {
+      for (let k in obj) {
+        if (k.substr(0, ignorePrefixLength) === ignorePrefix) delete obj[k];
+      }
+    }
+  }
+
   private assembler: Assembler;
   private flushRoot: boolean;
   private metaEmitted: boolean;
@@ -33,7 +45,9 @@ export class RowBuilder extends Transform {
     options.writableObjectMode = true;
     super(options);
     this.totallyEmpty = true;
-    const { queryType, timestamp = 'timestamp' } = options;
+    const { queryType, timestamp = 'timestamp', ignorePrefix = null } = options;
+
+    const cleanup = RowBuilder.cleanupFactory(ignorePrefix);
 
     let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
     let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
@@ -48,6 +62,7 @@ export class RowBuilder extends Transform {
           if (keyStack.length === 0) {
             let result = value.result;
             if (timestamp) result[timestamp] = new Date(value.timestamp);
+            if (cleanup) cleanup(result);
             this.push(result);
             return false;
           }
@@ -59,6 +74,7 @@ export class RowBuilder extends Transform {
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 2 && keyStack[1] === 'result') {
             if (timestamp) value.timestamp = new Date(stack[1].timestamp);
+            if (cleanup) cleanup(value);
             this.push(value);
             return false;
           }
@@ -71,6 +87,7 @@ export class RowBuilder extends Transform {
           if (keyStack.length === 0) {
             let event = value.event;
             if (timestamp) event[timestamp] = new Date(value.timestamp);
+            if (cleanup) cleanup(event);
             this.push(event);
             return false;
           }
@@ -85,6 +102,7 @@ export class RowBuilder extends Transform {
             let event = value.event;
             if (timestamp) event[timestamp] = new Date(event.timestamp);
             if (timestamp !== 'timestamp') delete event['timestamp'];
+            if (cleanup) cleanup(event);
             this.push(event);
             return false;
           }
@@ -103,6 +121,7 @@ export class RowBuilder extends Transform {
       case 'segmentMetadata':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
+            if (cleanup) cleanup(value);
             this.push(value);
             return false;
           }
