@@ -3,3 +3,4 @@
 .idea/tasks.xml
 node_modules/
 build/
+private/

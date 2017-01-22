@@ -336,7 +336,7 @@ describe("Druid requester static data source", function() {
         query: {
           "queryType": "groupBy",
           "dataSource": "wikipedia",
-          "intervals": "2015-09-12/2015-09-13T01:00:00Z",
+          "intervals": "2015-09-12/2015-09-12T01:00:00Z",
           "granularity": "all",
           "context": {
             "useCache": false,
@@ -360,27 +360,27 @@ describe("Druid requester static data source", function() {
           expect(res).to.deep.equal([
             {
               "RowCount": 1,
-              "page": "!T.O.O.H.!",
-              "timestamp": new Date('2015-09-12T00:00:00.000Z')
-            },
-            {
-              "RowCount": 2,
-              "page": "\"The Secret Life of...\"",
-              "timestamp": new Date('2015-09-12T00:00:00.000Z')
-            },
-            {
-              "RowCount": 2,
-              "page": "'''Kertomus Venetsiasta''' 1977",
+              "page": "(90) Antiope",
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
               "RowCount": 1,
-              "page": "'Ajde Jano",
+              "page": ".aaa",
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
               "RowCount": 1,
-              "page": "'Alî Sharî'atî",
+              "page": ".abb",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 1,
+              "page": ".abbott",
+              "timestamp": new Date('2015-09-12T00:00:00.000Z')
+            },
+            {
+              "RowCount": 1,
+              "page": ".axa",
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             }
           ]);
