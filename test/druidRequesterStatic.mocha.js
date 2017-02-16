@@ -99,6 +99,24 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("correct error for segmentMetadata", () => {
+      return toArray(druidRequester({
+        query: {
+          "queryType": "segmentMetadata",
+          "dataSource": 'wikipedia_borat',
+          merge: true,
+          analysisTypes: [],
+          lenientAggregatorMerge: true
+        }
+      }))
+        .then(() => {
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.equal("No such datasource");
+        })
+    });
+
   });
 
   describe("introspection", () => {
