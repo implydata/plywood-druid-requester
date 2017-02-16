@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { PlywoodRequester, PlywoodLocator, Location, basicLocator } from 'plywood-base-api';
+import { PlywoodRequester, PlywoodLocator, Location, basicLocator, hostToLocation } from 'plywood-base-api';
 import { ReadableStream, PassThrough } from 'readable-stream';
 import * as Promise from 'any-promise';
 import * as request from 'request';
@@ -33,7 +33,6 @@ export interface DruidRequesterParameters {
   urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
   socksHost?: string;
-  socksPort?: number;
   socksUsername?: string;
   socksPassword?: string;
 }
@@ -79,7 +78,7 @@ interface RequestWithDecorationOptions {
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, urlBuilder, requestDecorator, socksHost, socksPort } = parameters;
+  let { locator, host, timeout, urlBuilder, requestDecorator, socksHost } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
     locator = basicLocator(host, 8082);
@@ -90,11 +89,13 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
   let agentClass: any = null;
   let agentOptions: any = null;
-  if (socksHost || socksPort) {
+  if (socksHost) {
+    const socksLocation = hostToLocation(socksHost, 1080);
     agentClass = Agent;
-    agentOptions = {};
-    if (socksHost) agentOptions.socksHost = socksHost;
-    if (socksPort) agentOptions.socksPort = socksPort;
+    agentOptions = {
+      socksHost: socksLocation.hostname,
+      socksPort: socksLocation.port
+    };
     if (parameters.socksUsername) agentOptions.socksUsername = parameters.socksUsername;
     if (parameters.socksPassword) agentOptions.socksPassword = parameters.socksPassword;
   }
