@@ -760,6 +760,38 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("works with DruidSQL", () => {
+      return toArray(druidRequester({
+        query: {
+          query: "SELECT page, COUNT(*) AS Cnt FROM wikipedia GROUP BY page LIMIT 5"
+        }
+      }))
+        .then((res) => {
+          expect(res).to.deep.equal([
+            {
+              "Cnt": 1,
+              "page": "!T.O.O.H.!"
+            },
+            {
+              "Cnt": 2,
+              "page": "\"The Secret Life of...\""
+            },
+            {
+              "Cnt": 2,
+              "page": "'''Kertomus Venetsiasta''' 1977"
+            },
+            {
+              "Cnt": 1,
+              "page": "'Ajde Jano"
+            },
+            {
+              "Cnt": 1,
+              "page": "'Alî Sharî'atî"
+            }
+          ]);
+        })
+    });
+
   });
 
 

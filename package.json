@@ -22,8 +22,9 @@
     "typings/"
   ],
   "scripts": {
-    "prepublish": "node_modules/.bin/tdi",
-    "compile": "./compile"
+    "prepare": "tdi -q",
+    "compile": "tsc",
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "any-promise": "^1.3.0",

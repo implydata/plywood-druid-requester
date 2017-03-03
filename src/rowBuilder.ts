@@ -119,6 +119,7 @@ export class RowBuilder extends Transform {
         break;
 
       case 'segmentMetadata':
+      case 'sql':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
             if (cleanup) cleanup(value);

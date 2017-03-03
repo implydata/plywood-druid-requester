@@ -160,6 +160,11 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     let query = req.query;
     let { queryType, intervals } = query;
 
+    // Maybe Druid SQL
+    if (!queryType && typeof query.query === 'string') {
+      queryType = 'sql';
+    }
+
     let stream = new PassThrough({
       objectMode: true
     });
@@ -253,7 +258,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           context,
           options: {
             method: "POST",
-            url: url + "/druid/v2/" + (context['pretty'] ? "?pretty" : ""),
+            url: url + "/druid/v2/" + (queryType === 'sql' ? 'sql/' : '') + (context['pretty'] ? '?pretty': ''),
             body: JSON.stringify(query),
             headers: {
               "Content-type": "application/json"
@@ -305,7 +310,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   // response.on('end', () => console.log('end'));
 
                   const rowBuilder = new RowBuilder({
-                    queryType: query.queryType,
+                    queryType,
                     timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp',
                     ignorePrefix: context['ignorePrefix']
                   });
