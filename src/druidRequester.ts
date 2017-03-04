@@ -278,6 +278,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                     response.on('error', streamError);
 
                     response.pipe(concat((resp: string) => {
+                      resp = String(resp);
                       let error: any;
                       try {
                         const body = JSON.parse(resp);
@@ -320,7 +321,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   });
 
                   rowBuilder.on('end', () => {
-                    if (!rowBuilder.totallyEmpty) {
+                    if (!rowBuilder.maybeNoDataSource) {
                       stream.end();
                       return;
                     }

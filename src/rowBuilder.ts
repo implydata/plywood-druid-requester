@@ -38,20 +38,20 @@ export class RowBuilder extends Transform {
   private assembler: Assembler;
   private flushRoot: boolean;
   private metaEmitted: boolean;
-  public totallyEmpty: boolean;
+  public maybeNoDataSource: boolean;
 
   constructor(options: RowBuilderOptions) {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    this.totallyEmpty = true;
     const { queryType, timestamp = 'timestamp', ignorePrefix = null } = options;
+    this.maybeNoDataSource = queryType !== 'sql';
 
     const cleanup = RowBuilder.cleanupFactory(ignorePrefix);
 
     let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
     let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
-      this.totallyEmpty = false;
+      this.maybeNoDataSource = false;
       return true;
     };
 
@@ -109,7 +109,7 @@ export class RowBuilder extends Transform {
           return true;
         };
         onKeyValueAdd = (key, value) => {
-          this.totallyEmpty = false;
+          this.maybeNoDataSource = false;
           if (key !== 'pagingIdentifiers') return true;
           if (this.metaEmitted) return false;
           this.emit('meta', { pagingIdentifiers: value });

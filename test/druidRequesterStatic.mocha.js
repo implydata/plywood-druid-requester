@@ -117,6 +117,53 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("correct error for bad SQL (parse)", () => {
+      return toArray(druidRequester({
+        query: {
+          query: "SELECT page, COUNT(*) AS Cnt FROZON"
+        }
+      }))
+        .then(() => {
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.contain(`Unknown exception: Encountered "FROZON" at line 1`);
+        })
+    });
+
+    it("correct error for bad SQL (no table)", () => {
+      return toArray(druidRequester({
+        query: {
+          query: "SELECT page, COUNT(*) AS Cnt FROM moonshine"
+        }
+      }))
+        .then(() => {
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.contain(`Table 'moonshine' not found`);
+        })
+    });
+
+    it("correct error for bad SQL (logic)", () => {
+      return toArray(druidRequester({
+        query: {
+          query: `SELECT
+            SUM("count") AS "Count",
+            SUM("added") AS "TotalAdded"
+            FROM "wikipedia"
+            WHERE ("channel" <> 'en')
+            GROUP BY ''=''`
+        }
+      }))
+        .then(() => {
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.deep.equal('bad response');
+        })
+    });
+
   });
 
   describe("introspection", () => {
@@ -429,11 +476,7 @@ describe("Druid requester static data source", function() {
       let seenMeta = false;
       requester.on('meta', (meta) => {
         seenMeta = true;
-        expect(meta).to.deep.equal({
-          "pagingIdentifiers": {
-            "wikipedia_2015-09-12T00:00:00.000Z_2015-09-12T02:00:00.000Z_2016-11-12T01:38:23.915Z": 3
-          }
-        });
+        expect(meta).to.have.key('pagingIdentifiers');
       });
 
       return toArray(requester)
@@ -549,11 +592,7 @@ describe("Druid requester static data source", function() {
       let seenMeta = false;
       requester.on('meta', (meta) => {
         seenMeta = true;
-        expect(meta).to.deep.equal({
-          "pagingIdentifiers": {
-            "wikipedia_2015-09-12T00:00:00.000Z_2015-09-12T02:00:00.000Z_2016-11-12T01:38:23.915Z": 1
-          }
-        });
+        expect(meta).to.have.key('pagingIdentifiers');
       });
 
       return toArray(requester)
@@ -789,6 +828,17 @@ describe("Druid requester static data source", function() {
               "page": "'Alî Sharî'atî"
             }
           ]);
+        })
+    });
+
+    it("works with DruidSQL empty result", () => {
+      return toArray(druidRequester({
+        query: {
+          query: "SELECT page, COUNT(*) AS Cnt FROM wikipedia WHERE cityName = 'lol_lol_lol_lol' GROUP BY page LIMIT 5"
+        }
+      }))
+        .then((res) => {
+          expect(res).to.deep.equal([]);
         })
     });
 
