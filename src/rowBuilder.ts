@@ -45,7 +45,7 @@ export class RowBuilder extends Transform {
     options.writableObjectMode = true;
     super(options);
     const { queryType, timestamp = 'timestamp', ignorePrefix = null } = options;
-    this.maybeNoDataSource = queryType !== 'sql';
+    this.maybeNoDataSource = queryType !== 'sql'; // sql mode will always throw an error, thank god.
 
     const cleanup = RowBuilder.cleanupFactory(ignorePrefix);
 
