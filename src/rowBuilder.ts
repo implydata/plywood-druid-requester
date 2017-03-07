@@ -75,11 +75,11 @@ export class RowBuilder extends Transform {
       case 'timeBoundary':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            let result = value.result;
-            if (timestamp) result[timestamp] = new Date(value.timestamp);
-            if (cleanupIgnore) cleanupIgnore(result);
-            if (cleanupDummy) cleanupDummy(value);
-            this.push(result);
+            let d = value.result;
+            if (timestamp) d[timestamp] = new Date(value.timestamp);
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
             return false;
           }
           return true;
@@ -89,10 +89,11 @@ export class RowBuilder extends Transform {
       case 'topN':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 2 && keyStack[1] === 'result') {
-            if (timestamp) value.timestamp = new Date(stack[1].timestamp);
-            if (cleanupIgnore) cleanupIgnore(value);
-            if (cleanupDummy) cleanupDummy(value);
-            this.push(value);
+            let d = value;
+            if (timestamp) d.timestamp = new Date(stack[1].timestamp);
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
             return false;
           }
           return true;
@@ -102,11 +103,11 @@ export class RowBuilder extends Transform {
       case 'groupBy':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            let event = value.event;
-            if (timestamp) event[timestamp] = new Date(value.timestamp);
-            if (cleanupIgnore) cleanupIgnore(event);
-            if (cleanupDummy) cleanupDummy(value);
-            this.push(event);
+            let d = value.event;
+            if (timestamp) d[timestamp] = new Date(value.timestamp);
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
             return false;
           }
           return true;
@@ -117,12 +118,12 @@ export class RowBuilder extends Transform {
         onArrayPush = (value, stack, keyStack) => {
           // keyStack = [0, result, events]
           if (keyStack.length === 3 && keyStack[2] === 'events') {
-            let event = value.event;
-            if (timestamp) event[timestamp] = new Date(event.timestamp);
-            if (timestamp !== 'timestamp') delete event['timestamp'];
-            if (cleanupIgnore) cleanupIgnore(event);
-            if (cleanupDummy) cleanupDummy(value);
-            this.push(event);
+            let d = value.event;
+            if (timestamp) d[timestamp] = new Date(d.timestamp);
+            if (timestamp !== 'timestamp') delete d['timestamp'];
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
             return false;
           }
           return true;
@@ -141,9 +142,10 @@ export class RowBuilder extends Transform {
       case 'sql':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            if (cleanupIgnore) cleanupIgnore(value);
-            if (cleanupDummy) cleanupDummy(value);
-            this.push(value);
+            let d = value;
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
             return false;
           }
           return true;
