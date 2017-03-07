@@ -456,6 +456,92 @@ describe("Druid requester static data source", function() {
         })
     });
 
+    it("works with time groupBy", () => {
+      return toArray(druidRequester({
+        query: {
+          "queryType": "groupBy",
+          "dataSource": "wikipedia-compact",
+          "intervals": "2015-09-12T00Z/2015-09-13T00Z",
+          "granularity": "all",
+          "context": {
+            "timeout": 10000,
+            "groupByStrategy": "v2",
+            "useCache": false,
+            "populateCache": false
+          },
+          "filter": {
+            "type": "not",
+            "field": {
+              "type": "selector",
+              "dimension": "channel",
+              "value": "en"
+            }
+          },
+          "dimensions": [
+            {
+              "type": "extraction",
+              "dimension": "__time",
+              "outputName": "***__time",
+              "extractionFn": {
+                "type": "javascript",
+                "function": "function(s){try{\nvar d = new org.joda.time.DateTime(s);\nd = d.hourOfDay().roundFloorCopy();\nd = d.hourOfDay().setCopy(Math.floor(d.hourOfDay().get() / 2) * 2);\nreturn d;\n}catch(e){return null;}}"
+              }
+            },
+            {
+              "type": "default",
+              "dimension": "channel",
+              "outputName": "channel"
+            }
+          ],
+          "aggregations": [
+            {
+              "name": "Count",
+              "type": "doubleSum",
+              "fieldName": "count"
+            }
+          ],
+          "limitSpec": {
+            "type": "default",
+            "columns": [
+              {
+                "dimension": "Count",
+                "direction": "descending"
+              }
+            ],
+            "limit": 4
+          }
+        },
+        context: {
+          timestamp: null,
+          dummyPrefix: '***'
+        }
+      }))
+        .then((res) => {
+          expect(res).to.deep.equal([
+            {
+              "Count": 24276,
+              "__time": "2015-09-12T06:00:00.000Z",
+              "channel": "vi"
+            },
+            {
+              "Count": 11223,
+              "__time": "2015-09-12T16:00:00.000Z",
+              "channel": "vi"
+            },
+            {
+              "Count": 9258,
+              "__time": "2015-09-12T14:00:00.000Z",
+              "channel": "vi"
+            },
+            {
+              "Count": 8928,
+              "__time": "2015-09-12T08:00:00.000Z",
+              "channel": "vi"
+            }
+          ]);
+        })
+    });
+
     it("works with regular select", () => {
       const requester = druidRequester({
         query: {

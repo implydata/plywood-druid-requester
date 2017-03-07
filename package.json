@@ -24,7 +24,9 @@
   "scripts": {
     "prepare": "tdi -q",
     "compile": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "pretest": "tsc",
+    "test": "mocha"
   },
   "dependencies": {
     "any-promise": "^1.3.0",
