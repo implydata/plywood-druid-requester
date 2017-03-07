@@ -412,12 +412,16 @@ describe("Druid requester static data source", function() {
           "limitSpec": {
             "columns": [
               {
-                "dimension": "page"
+                "dimension": "page",
+                "outputName": "$__page"
               }
             ],
             "limit": 5,
             "type": "default"
           }
+        },
+        context: {
+          dummyPrefix: '$__'
         }
       }))
         .then((res) => {

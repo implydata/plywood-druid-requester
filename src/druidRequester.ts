@@ -313,7 +313,8 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   const rowBuilder = new RowBuilder({
                     queryType,
                     timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp',
-                    ignorePrefix: context['ignorePrefix']
+                    ignorePrefix: context['ignorePrefix'],
+                    dummyPrefix: context['dummyPrefix']
                   });
 
                   rowBuilder.on('meta', (meta: any) => {

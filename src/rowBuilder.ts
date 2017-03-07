@@ -21,16 +21,30 @@ export interface RowBuilderOptions extends TransformOptions {
   queryType: string;
   timestamp?: string | null;
   ignorePrefix?: string | null;
+  dummyPrefix?: string | null;
 }
 
 export class RowBuilder extends Transform {
 
-  static cleanupFactory(ignorePrefix: string | null) {
+  static cleanupIgnoreFactory(ignorePrefix: string | null) {
     if (ignorePrefix == null) return null;
     const ignorePrefixLength = ignorePrefix.length;
     return (obj: any) => {
       for (let k in obj) {
         if (k.substr(0, ignorePrefixLength) === ignorePrefix) delete obj[k];
+      }
+    }
+  }
+
+  static cleanupDummyFactory(dummyPrefix: string | null) {
+    if (dummyPrefix == null) return null;
+    const dummyPrefixLength = dummyPrefix.length;
+    return (obj: any) => {
+      for (let k in obj) {
+        if (k.substr(0, dummyPrefixLength) === dummyPrefix) {
+          obj[k.substr(dummyPrefixLength)] = obj[k];
+          delete obj[k];
+        }
       }
     }
   }
@@ -44,10 +58,11 @@ export class RowBuilder extends Transform {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    const { queryType, timestamp = 'timestamp', ignorePrefix = null } = options;
+    const { queryType, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
     this.maybeNoDataSource = queryType !== 'sql'; // sql mode will always throw an error, thank god.
 
-    const cleanup = RowBuilder.cleanupFactory(ignorePrefix);
+    const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
+    const cleanupDummy = RowBuilder.cleanupDummyFactory(dummyPrefix);
 
     let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
     let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
@@ -62,7 +77,8 @@ export class RowBuilder extends Transform {
           if (keyStack.length === 0) {
             let result = value.result;
             if (timestamp) result[timestamp] = new Date(value.timestamp);
-            if (cleanup) cleanup(result);
+            if (cleanupIgnore) cleanupIgnore(result);
+            if (cleanupDummy) cleanupDummy(value);
             this.push(result);
             return false;
           }
@@ -74,7 +90,8 @@ export class RowBuilder extends Transform {
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 2 && keyStack[1] === 'result') {
             if (timestamp) value.timestamp = new Date(stack[1].timestamp);
-            if (cleanup) cleanup(value);
+            if (cleanupIgnore) cleanupIgnore(value);
+            if (cleanupDummy) cleanupDummy(value);
             this.push(value);
             return false;
           }
@@ -87,7 +104,8 @@ export class RowBuilder extends Transform {
           if (keyStack.length === 0) {
             let event = value.event;
             if (timestamp) event[timestamp] = new Date(value.timestamp);
-            if (cleanup) cleanup(event);
+            if (cleanupIgnore) cleanupIgnore(event);
+            if (cleanupDummy) cleanupDummy(value);
             this.push(event);
             return false;
           }
@@ -102,7 +120,8 @@ export class RowBuilder extends Transform {
             let event = value.event;
             if (timestamp) event[timestamp] = new Date(event.timestamp);
             if (timestamp !== 'timestamp') delete event['timestamp'];
-            if (cleanup) cleanup(event);
+            if (cleanupIgnore) cleanupIgnore(event);
+            if (cleanupDummy) cleanupDummy(value);
             this.push(event);
             return false;
           }
@@ -122,7 +141,8 @@ export class RowBuilder extends Transform {
       case 'sql':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            if (cleanup) cleanup(value);
+            if (cleanupIgnore) cleanupIgnore(value);
+            if (cleanupDummy) cleanupDummy(value);
             this.push(value);
             return false;
           }
