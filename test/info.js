@@ -18,7 +18,7 @@
 const DOCKER_MACHINE = '192.168.99.100';
 
 exports.druidHost = `${DOCKER_MACHINE}:8082`;
-exports.druidVersion = '0.10.0-SNAPSHOT';
+exports.druidVersion = '0.10.0-rc1-iap1';
 
 exports.liveDruidHost = `172.31.7.${50 + 5}:8082`;
 exports.liveDruidVersion = '0.9.2-rc2';
