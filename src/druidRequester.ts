@@ -120,6 +120,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
             return Promise.resolve(decorationPromise)
               .then((decoration: Decoration) => {
                 if (decoration.headers) {
+                  options.headers = options.headers || {};
                   Object.assign(options.headers, decoration.headers);
                 }
                 return options;
