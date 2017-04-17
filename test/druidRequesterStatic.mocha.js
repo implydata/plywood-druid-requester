@@ -795,7 +795,7 @@ describe("Druid requester static data source", function() {
                 ]
               },
               "Count": 11391,
-              "P95": 136.41568,
+              "P95": 130.39272,
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             }
           ]);
@@ -881,6 +881,7 @@ describe("Druid requester static data source", function() {
             "regionIsoCode",
             "regionName",
             "sometimeLater",
+            "sometimeLaterMs",
             "user",
             "userChars",
             "user_theta",
