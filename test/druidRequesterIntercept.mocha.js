@@ -116,86 +116,123 @@ describe("Druid requester intercept", function() {
       });
   });
 
-  it("works with simple headers POST (sync)", () => {
-    let druidRequester = druidRequesterFactory({
-      host: 'a.druid.host',
-      requestDecorator: () => {
-        return {
-          headers: {
-            'authorization': 'Basic Auth',
-            'X-My-Headers': 'My Header value'
+  context('with sync requestDecorator', () => {
+    let druidRequester;
+
+    before(() => {
+      druidRequester = druidRequesterFactory({
+        host: 'a.druid.host',
+        requestDecorator: () => {
+          return {
+            headers: {
+              'authorization': 'Basic Auth',
+              'X-My-Headers': 'My Header value'
+            }
           }
         }
-      }
+      });
     });
 
-    nock('http://a.druid.host:8082', {
-      reqheaders: {
-        'authorization': 'Basic Auth',
-        'X-My-Headers': 'My Header value'
-      }
-    })
-      .post('/druid/v2/', {
-        "queryType": "topNz",
-        "dataSource": 'dsz'
+    it('decorates request for topNz query', () => {
+      nock('http://a.druid.host:8082', {
+        reqheaders: {
+          'authorization': 'Basic Auth',
+          'X-My-Headers': 'My Header value'
+        }
       })
-      .reply(200, {
-        lol: 'data'
-      });
-
-    return toArray(druidRequester({
-      query: {
-        "queryType": "topNz",
-        "dataSource": 'dsz'
-      }
-    }))
-      .then((res) => {
-        expect(res.length).to.equal(1);
-        expect(res[0]).to.deep.equal({
+        .post('/druid/v2/', {
+          "queryType": "topNz",
+          "dataSource": 'dsz'
+        })
+        .reply(200, {
           lol: 'data'
         });
-      });
-  });
 
-  it("works with simple headers POST (async)", () => {
-    let druidRequester = druidRequesterFactory({
-      host: 'a.druid.host',
-      requestDecorator: () => {
-        return Promise.resolve({
-          headers: {
-            'authorization': 'Basic Auth',
-            'X-My-Headers': 'My Header value'
-          }
+      return toArray(druidRequester({
+        query: {
+          "queryType": "topNz",
+          "dataSource": 'dsz'
+        }
+      }))
+        .then((res) => {
+          expect(res.length).to.equal(1);
+          expect(res[0]).to.deep.equal({
+            lol: 'data'
+          });
         });
-      }
     });
 
-    nock('http://a.druid.host:8082', {
-      reqheaders: {
-        'authorization': 'Basic Auth',
-        'X-My-Headers': 'My Header value'
-      }
-    })
-      .post('/druid/v2/', {
-        "queryType": "topNz",
-        "dataSource": 'dsz'
+    it('decorates request for status query', () => {
+      nock('http://a.druid.host:8082', {
+        reqheaders: {
+          'authorization': 'Basic Auth',
+          'X-My-Headers': 'My Header value'
+        }
       })
-      .reply(200, {
-        lol: 'data'
-      });
-
-    return toArray(druidRequester({
-      query: {
-        "queryType": "topNz",
-        "dataSource": 'dsz'
-      }
-    }))
-      .then((res) => {
-        expect(res.length).to.equal(1);
-        expect(res[0]).to.deep.equal({
+        .get('/status')
+        .reply(200, {
           lol: 'data'
         });
+
+      return toArray(druidRequester({
+        query: {
+          "queryType": "status"
+        }
+      }))
+        .then((res) => {
+          expect(res.length).to.equal(1);
+          expect(res[0]).to.deep.equal({
+            lol: 'data'
+          });
+        });
+    });
+  })
+
+  context('with async requestDecorator', () => {
+    let druidRequester;
+
+    before(() => {
+      druidRequester = druidRequesterFactory({
+        host: 'a.druid.host',
+        requestDecorator: () => {
+          return Promise.resolve({
+            headers: {
+              'authorization': 'Basic Auth',
+              'X-My-Headers': 'My Header value'
+            }
+          });
+        }
       });
+    });
+
+    it('decorates request for topNz query', () => {
+      nock('http://a.druid.host:8082', {
+        reqheaders: {
+          'authorization': 'Basic Auth',
+          'X-My-Headers': 'My Header value'
+        }
+      })
+        .post('/druid/v2/', {
+          "queryType": "topNz",
+          "dataSource": 'dsz'
+        })
+        .reply(200, {
+          lol: 'data'
+        });
+
+      return toArray(druidRequester({
+        query: {
+          "queryType": "topNz",
+          "dataSource": 'dsz'
+        }
+      }))
+        .then((res) => {
+          expect(res.length).to.equal(1);
+          expect(res[0]).to.deep.equal({
+            lol: 'data'
+          });
+        });
+    });
   });
 
   it("formats plain error", () => {
