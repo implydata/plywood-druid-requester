@@ -123,6 +123,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           if (decorationPromise) {
             return Promise.resolve(decorationPromise)
               .then((decoration: Decoration) => {
+                if (!decoration) return options;
                 if (decoration.method) {
                   options.method = decoration.method;
                 }
