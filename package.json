@@ -35,19 +35,20 @@
     "plywood-base-api": "^0.2.5",
     "readable-stream": "^2.2.9",
     "request": "^2.81.0",
-    "request-promise-any": "^1.0.3",
+    "request-promise-any": "^1.0.4",
     "socks5-http-client": "^1.0.2",
     "stream-json": "^0.4.2",
-    "tslib": "^1.6.0"
+    "tslib": "^1.7.0"
   },
   "devDependencies": {
     "@types/mocha": "2.2.41",
     "@types/node": "7.0.18",
     "chai": "3.5.0",
+    "lodash.clonedeepwith": "4.5.0",
     "mocha": "3.3.0",
     "nock": "9.0.13",
     "stream-to-array": "2.3.0",
-    "tdi": "0.2.23",
+    "tdi": "0.2.26",
     "tslint": "5.2.0",
     "typescript": "2.2.2"
   }

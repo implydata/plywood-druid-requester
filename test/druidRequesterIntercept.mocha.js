@@ -17,7 +17,8 @@
 
 const { expect } = require("chai");
 const toArray = require("stream-to-array");
-let Promise = require("any-promise");
+const Promise = require("any-promise");
+const cloneDeepWith = require('lodash.clonedeepwith');
 
 let { druidRequesterFactory } = require('../build/druidRequester');
 
@@ -186,7 +187,7 @@ describe("Druid requester intercept", function() {
           });
         });
     });
-  })
+  });
 
   context('with async requestDecorator', () => {
     let druidRequester;
@@ -231,6 +232,122 @@ describe("Druid requester intercept", function() {
           expect(res[0]).to.deep.equal({
             lol: 'data'
           });
+        });
+    });
+  });
+
+  context('with fancy requestDecorator', () => {
+    let druidRequester;
+
+    let fancyRequestDecorator = ({ method, url, query }) => {
+      if (method === 'POST' && query) {
+        delete query.queryType;
+        query.superDuperToken = '555';
+        query.filter = cloneDeepWith(query.filter, (f) => {
+          if (f.type === 'selector') {
+            f.type = 'same-same';
+          }
+          return f;
+        });
+      }
+      return {
+        url: url + 'principalId/3246325435',
+        query,
+        resultType: 'sql' // expect druidsql like results (i.e. simple array of objects)
+      }
+    };
+
+    druidRequester = druidRequesterFactory({
+      host: 'a.druid.host',
+      requestDecorator: fancyRequestDecorator
+    });
+
+    it('decorates request for topNz query', () => {
+      nock('http://a.druid.host:8082')
+        .post('/druid/v2/principalId/3246325435', {
+          "aggregations": [
+            {
+              "name": "Count",
+              "type": "count"
+            }
+          ],
+          "dataSource": "diamonds",
+          "dimensions": [
+            {
+              "dimension": "color",
+              "outputName": "Color",
+              "type": "default"
+            }
+          ],
+          "filter": {
+            "type": "and",
+            "filters": [
+              {
+                "type": "same-same",
+                "dimension": "color",
+                "value": "some_color"
+              },
+              {
+                "type": "same-same",
+                "dimension": "country",
+                "value": "USA"
+              }
+            ]
+          },
+          "granularity": "all",
+          "intervals": "2015-03-12T00Z/2015-03-19T00Z",
+          "superDuperToken": "555"
+        })
+        .reply(200, [
+          {
+            "color": 'some_color',
+            "tower": 'babel'
+          }
+        ]);
+
+      return toArray(druidRequester({
+        query: {
+          "aggregations": [
+            {
+              "name": "Count",
+              "type": "count"
+            }
+          ],
+          "dataSource": "diamonds",
+          "dimensions": [
+            {
+              "dimension": "color",
+              "outputName": "Color",
+              "type": "default"
+            }
+          ],
+          "filter": {
+            "type": "and",
+            "filters": [
+              {
+                "type": "same-same",
+                "dimension": "color",
+                "value": "some_color"
+              },
+              {
+                "type": "same-same",
+                "dimension": "country",
+                "value": "USA"
+              }
+            ]
+          },
+          "granularity": "all",
+          "intervals": "2015-03-12T00Z/2015-03-19T00Z",
+          "queryType": "groupBy"
+        }
+      }))
+        .then((res) => {
+          expect(res).to.deep.equal([
+            {
+              "color": "some_color",
+              "tower": 'babel'
+            }
+          ]);
         });
     });
   });

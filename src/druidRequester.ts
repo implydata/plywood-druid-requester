@@ -52,7 +52,11 @@ export interface DecoratorRequest {
 }
 
 export interface Decoration {
-  headers: { [header: string]: string };
+  method?: string;
+  url?: string;
+  headers?: Record<string, string>;
+  query?: string | object;
+  resultType?: string;
 }
 
 function getDataSourcesFromQuery(query: any): string[] {
@@ -113,15 +117,32 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           let decorationPromise = requestDecorator({
             method: options.method,
             url: options.url,
-            query
+            query: JSON.parse(JSON.stringify(query)) // quick deep copy
           }, context['decoratorContext']);
 
           if (decorationPromise) {
             return Promise.resolve(decorationPromise)
               .then((decoration: Decoration) => {
+                if (decoration.method) {
+                  options.method = decoration.method;
+                }
+                if (decoration.url) {
+                  options.url = decoration.url;
+                }
                 if (decoration.headers) {
                   options.headers = options.headers || {};
                   Object.assign(options.headers, decoration.headers);
+                }
+                if (decoration.query) {
+                  if (typeof decoration.query === 'string') {
+                    options.body = decoration.query;
+                  } else {
+                    options.body = JSON.stringify(decoration.query);
+                  }
+                }
+                if (decoration.resultType) {
+                  // This is a type hack, ToDo: make proper type here
+                  (options as any).resultType = decoration.resultType;
                 }
                 return options;
               });
@@ -312,7 +333,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   // response.on('end', () => console.log('end'));
 
                   const rowBuilder = new RowBuilder({
-                    queryType,
+                    resultType: (options as any).resultType || queryType,
                     timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp',
                     ignorePrefix: context['ignorePrefix'],
                     dummyPrefix: context['dummyPrefix']

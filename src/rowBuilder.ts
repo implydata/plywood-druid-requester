@@ -18,7 +18,7 @@ import { Transform, TransformOptions } from "stream";
 import { Assembler, ObjectIndex } from "./assembler";
 
 export interface RowBuilderOptions extends TransformOptions {
-  queryType: string;
+  resultType: string;
   timestamp?: string | null;
   ignorePrefix?: string | null;
   dummyPrefix?: string | null;
@@ -58,8 +58,8 @@ export class RowBuilder extends Transform {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    const { queryType, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
-    this.maybeNoDataSource = queryType !== 'sql'; // sql mode will always throw an error, thank god.
+    const { resultType, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
+    this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
     const cleanupDummy = RowBuilder.cleanupDummyFactory(dummyPrefix);
@@ -70,7 +70,7 @@ export class RowBuilder extends Transform {
       return true;
     };
 
-    switch (queryType) {
+    switch (resultType) {
       case 'timeseries':
       case 'timeBoundary':
         onArrayPush = (value, stack, keyStack) => {
@@ -162,12 +162,12 @@ export class RowBuilder extends Transform {
     });
   }
 
-  protected _transform(chunk: any, encoding: any, callback: any) {
+  public _transform(chunk: any, encoding: any, callback: any) {
     this.assembler.process(chunk);
     callback();
   }
 
-  protected _flush(callback: any) {
+  public _flush(callback: any) {
     if (this.flushRoot) {
       this.push(this.assembler.current);
     }
