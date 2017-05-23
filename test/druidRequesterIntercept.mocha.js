@@ -17,7 +17,6 @@
 
 const { expect } = require("chai");
 const toArray = require("stream-to-array");
-const Promise = require("any-promise");
 const cloneDeepWith = require('lodash.clonedeepwith');
 
 let { druidRequesterFactory } = require('../build/druidRequester');
@@ -96,6 +95,42 @@ describe("Druid requester intercept", function() {
 
     nock('http://localhost')
       .post('/proxy/druid/v2/', {
+        'queryType': 'topNz',
+        'dataSource': 'dsz'
+      })
+      .reply(200, {
+        lol: 'data'
+      });
+
+    return toArray(druidRequester({
+      query: {
+        'queryType': 'topNz',
+        'dataSource': 'dsz'
+      }
+    }))
+      .then((res) => {
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
+          lol: 'data'
+        });
+      });
+  });
+
+  it("works with a basic auth token", () => {
+    let druidRequester = druidRequesterFactory({
+      host: 'localhost',
+      authToken: {
+        type: 'basic',
+        token: 'admin:druid'
+      }
+    });
+
+    nock('http://localhost:8082', {
+      reqheaders: {
+        'Authorization': 'Basic YWRtaW46ZHJ1aWQ=',
+      }
+    })
+      .post('/druid/v2/', {
         'queryType': 'topNz',
         'dataSource': 'dsz'
       })

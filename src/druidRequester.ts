@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-import { PlywoodRequester, PlywoodLocator, Location, basicLocator, hostToLocation } from 'plywood-base-api';
+import { PlywoodRequester, PlywoodLocator, Location, basicLocator, hostToLocation, AuthToken } from 'plywood-base-api';
 import { ReadableStream, PassThrough } from 'readable-stream';
-import * as Promise from 'any-promise';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-any';
@@ -32,6 +31,7 @@ export interface DruidRequesterParameters {
   timeout?: number;
   urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
+  authToken?: AuthToken;
   socksHost?: string;
   socksUsername?: string;
   socksPassword?: string;
@@ -82,7 +82,7 @@ interface RequestWithDecorationOptions {
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, urlBuilder, requestDecorator, socksHost } = parameters;
+  let { locator, host, timeout, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
     locator = basicLocator(host, 8082);
@@ -113,6 +113,11 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           options.agentOptions = agentOptions;
         }
 
+        options.headers = options.headers || {};
+         if (authToken && authToken.type === 'basic') {
+           options.headers["Authorization"] = "Basic " + new Buffer(authToken.token).toString('base64');
+         }
+
         if (requestDecorator) {
           let decorationPromise = requestDecorator({
             method: options.method,
@@ -131,7 +136,6 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   options.url = decoration.url;
                 }
                 if (decoration.headers) {
-                  options.headers = options.headers || {};
                   Object.assign(options.headers, decoration.headers);
                 }
                 if (decoration.query) {
