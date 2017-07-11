@@ -21,28 +21,33 @@ import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-any';
 import * as concat from 'concat-stream';
-import * as Agent from 'socks5-http-client/lib/Agent';
+import * as PlainAgent from 'socks5-http-client/lib/Agent';
+import * as SecureAgent from 'socks5-https-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
 import { RowBuilder } from './rowBuilder';
+
+export type Protocol = 'plain' | 'tls-loose' | 'tls';
+
+export interface DruidUrlBuilder {
+  (location: Location, secure: boolean): string
+}
+
+export interface DruidRequestDecorator {
+  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration | Promise<Decoration>;
+}
 
 export interface DruidRequesterParameters {
   locator?: PlywoodLocator;
   host?: string;
   timeout?: number;
+  protocol?: Protocol;
+  ca?: string;
   urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
   authToken?: AuthToken;
   socksHost?: string;
   socksUsername?: string;
   socksPassword?: string;
-}
-
-export interface DruidUrlBuilder {
-  (location: Location): string
-}
-
-export interface DruidRequestDecorator {
-  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration | Promise<Decoration>;
 }
 
 export interface DecoratorRequest {
@@ -71,8 +76,14 @@ function getDataSourcesFromQuery(query: any): string[] {
   }
 }
 
-function basicUrlBuilder(location: Location): string {
-  return `http://${location.hostname}:${location.port || 8082}`;
+function basicUrlBuilder(location: Location, secure: boolean): string {
+  let s = '';
+  let defaultPort = 8082;
+  if (secure) {
+    s = 's';
+    defaultPort = 8282;
+  }
+  return `http${s}://${location.hostname}:${location.port || defaultPort}`;
 }
 
 interface RequestWithDecorationOptions {
@@ -82,11 +93,16 @@ interface RequestWithDecorationOptions {
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
+  let { locator, host, timeout, protocol, ca, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
+
+  if (!protocol) protocol = 'plain';
+  const secure = protocol === 'tls' || protocol === 'tls-loose';
+
   if (!locator) {
     if (!host) throw new Error("must have a `host` or a `locator`");
-    locator = basicLocator(host, 8082);
+    locator = basicLocator(host, secure ? 8282 : 8082);
   }
+
   if (!urlBuilder) {
     urlBuilder = basicUrlBuilder;
   }
@@ -95,7 +111,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
   let agentOptions: any = null;
   if (socksHost) {
     const socksLocation = hostToLocation(socksHost, 1080);
-    agentClass = Agent;
+    agentClass = secure ? SecureAgent : PlainAgent;
     agentOptions = {
       socksHost: socksLocation.hostname,
       socksPort: socksLocation.port
@@ -111,6 +127,11 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
         if (agentClass) {
           options.agentClass = agentClass;
           options.agentOptions = agentOptions;
+        }
+
+        if (secure) {
+          options.strictSSL = (protocol === 'tls');
+          if (ca) options.ca = ca;
         }
 
         options.headers = options.headers || {};
@@ -213,7 +234,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     let url: string;
     locator()
       .then((location) => {
-        url = urlBuilder(location);
+        url = urlBuilder(location, secure);
 
         if (queryType === "status") {
           requestPromiseWithDecoration({

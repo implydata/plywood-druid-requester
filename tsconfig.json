@@ -9,7 +9,7 @@
     "strictNullChecks": false,
     "skipLibCheck": false,
     "importHelpers": true,
-    "lib": ["es6"],
+    "lib": ["es2016"],
     "target": "es5",
     "module": "commonjs",
     "rootDir": "src",
