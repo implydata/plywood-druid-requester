@@ -120,8 +120,9 @@ describe("Druid requester intercept", function() {
     let druidRequester = druidRequesterFactory({
       host: 'localhost',
       authToken: {
-        type: 'basic',
-        token: 'admin:druid'
+        type: 'basic-auth',
+        username: 'admin',
+        password: 'druid'
       }
     });
 
