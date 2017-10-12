@@ -29,26 +29,26 @@
     "test": "mocha"
   },
   "dependencies": {
-    "concat-stream": "^1.6.0",
-    "has-own-prop": "^1.0.0",
-    "plywood-base-api": "^0.2.8",
-    "readable-stream": "^2.3.3",
-    "request": "^2.83.0",
-    "request-promise-any": "^1.0.5",
-    "socks5-http-client": "^1.0.2",
-    "socks5-https-client": "^1.2.1",
-    "stream-json": "^0.5.2",
-    "tslib": "^1.7.1"
+    "concat-stream": "~1.6.0",
+    "has-own-prop": "~1.0.0",
+    "plywood-base-api": "~0.2.8",
+    "readable-stream": "~2.3.3",
+    "request": "~2.83.0",
+    "request-promise-native": "~1.0.5",
+    "socks5-http-client": "~1.0.2",
+    "socks5-https-client": "~1.2.1",
+    "stream-json": "~0.5.2",
+    "tslib": "~1.7.1"
   },
   "devDependencies": {
     "@types/mocha": "2.2.43",
-    "@types/node": "8.0.32",
+    "@types/node": "8.0.34",
     "chai": "4.1.2",
     "lodash.clonedeepwith": "4.5.0",
-    "mocha": "4.0.0",
+    "mocha": "4.0.1",
     "nock": "9.0.22",
     "stream-to-array": "2.3.0",
-    "tdi": "0.3.16",
+    "tdi": "0.3.18",
     "tslint": "5.7.0",
     "typescript": "2.5.3"
   }

@@ -141,7 +141,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.contain(`Table 'moonshine' not found`);
+          expect(err.message).to.contain(`Object 'moonshine' not found`);
         })
     });
 
@@ -149,18 +149,17 @@ describe("Druid requester static data source", function() {
       return toArray(druidRequester({
         query: {
           query: `SELECT
-            SUM("count") AS "Count",
-            SUM("added") AS "TotalAdded"
+            FLUME("count") AS "Count"
             FROM "wikipedia"
             WHERE ("channel" <> 'en')
-            GROUP BY ''=''`
+            GROUP BY ''`
         }
       }))
         .then(() => {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.deep.equal('bad response');
+          expect(err.message).to.include('No match found for function signature FLUME(<NUMERIC>)');
         })
     });
 

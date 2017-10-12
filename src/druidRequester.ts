@@ -19,7 +19,7 @@ import { PlywoodRequester, PlywoodLocator, Location, basicLocator, hostToLocatio
 import { ReadableStream, PassThrough } from 'readable-stream';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
-import * as requestPromise from 'request-promise-any';
+import * as requestPromise from 'request-promise-native';
 import * as concat from 'concat-stream';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
@@ -81,7 +81,7 @@ function basicUrlBuilder(location: Location, secure: boolean): string {
   let defaultPort = 8082;
   if (secure) {
     s = 's';
-    defaultPort = 8282;
+    defaultPort += 200;
   }
   return `http${s}://${location.hostname}:${location.port || defaultPort}`;
 }
