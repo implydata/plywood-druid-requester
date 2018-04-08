@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Imply Data, Inc.
+ * Copyright 2015-2018 Imply Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import { Assembler, ObjectIndex } from "./assembler";
 
 export interface RowBuilderOptions extends TransformOptions {
   resultType: string;
+  resultFormat?: string;
   timestamp?: string | null;
   ignorePrefix?: string | null;
   dummyPrefix?: string | null;
@@ -58,7 +59,7 @@ export class RowBuilder extends Transform {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    const { resultType, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
+    const { resultType, resultFormat, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
     this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
@@ -136,6 +137,44 @@ export class RowBuilder extends Transform {
           this.metaEmitted = true;
           return false;
         };
+        break;
+
+      case 'scan':
+        if (resultFormat === 'compactedList') {
+          let columns: string[] = null;
+          onArrayPush = (value, stack, keyStack) => {
+            // keyStack = [0, events]
+            if (keyStack.length === 2 && keyStack[1] === 'events') {
+              let d: any = {};
+              let n = columns.length;
+              for (let i = 0; i < n; i++) {
+                d[columns[i]] = value[i];
+              }
+              if (cleanupIgnore) cleanupIgnore(d);
+              if (cleanupDummy) cleanupDummy(d);
+              this.push(d);
+              return false;
+            }
+            return true;
+          };
+          onKeyValueAdd = (key, value) => {
+            if (key !== 'columns') return true;
+            columns = value;
+            return false;
+          };
+        } else {
+          onArrayPush = (value, stack, keyStack) => {
+            // keyStack = [0, events]
+            if (keyStack.length === 2 && keyStack[1] === 'events') {
+              let d = value;
+              if (cleanupIgnore) cleanupIgnore(d);
+              if (cleanupDummy) cleanupDummy(d);
+              this.push(d);
+              return false;
+            }
+            return true;
+          };
+        }
         break;
 
       case 'segmentMetadata':

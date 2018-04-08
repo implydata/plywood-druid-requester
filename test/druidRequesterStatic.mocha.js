@@ -1,6 +1,6 @@
 /*
  * Copyright 2015-2015 Metamarkets Group Inc.
- * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2015-2018 Imply Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -596,6 +596,108 @@ describe("Druid requester static data source", function() {
               "count": 1,
               "page": "Talk:Economic growth",
               "timestamp": new Date('2015-09-12T00:46:00.000Z')
+            }
+          ]);
+        })
+    });
+
+    it("works with regular scan (list)", () => {
+      const requester = druidRequester({
+        query: {
+          "queryType": "scan",
+          "dataSource": "wikipedia",
+          "intervals": "1000/3000",
+          "granularity": "all",
+          "filter": null,
+          "resultFormat": "list",
+          "limit": 4,
+          "columns": [
+            "page",
+            "channel",
+            "comment",
+            "added"
+          ]
+        }
+      });
+
+      return toArray(requester)
+        .then((res) => {
+          expect(res.length).to.equal(4);
+          expect(res).to.deep.equal([
+            {
+              "added": 0,
+              "channel": "ca",
+              "comment": "/* Enllaços externs */",
+              "page": "Israel Ballet"
+            },
+            {
+              "added": 213,
+              "channel": "de",
+              "comment": "/* Begriffsklärung */",
+              "page": "Diskussion:Flüchtlingskrise in Europa 2015"
+            },
+            {
+              "added": 0,
+              "channel": "de",
+              "comment": "tk",
+              "page": "Angelika Wende"
+            },
+            {
+              "added": 0,
+              "channel": "en",
+              "comment": "Archiving 1 discussion(s) to [[Talk:Economic growth/Archive 4]]) (bot",
+              "page": "Talk:Economic growth"
+            }
+          ]);
+        })
+    });
+
+    it("works with regular scan (compactedList)", () => {
+      const requester = druidRequester({
+        query: {
+          "queryType": "scan",
+          "dataSource": "wikipedia",
+          "intervals": "1000/3000",
+          "granularity": "all",
+          "filter": null,
+          "resultFormat": "compactedList",
+          "limit": 4,
+          "columns": [
+            "page",
+            "channel",
+            "comment",
+            "added"
+          ]
+        }
+      });
+
+      return toArray(requester)
+        .then((res) => {
+          expect(res.length).to.equal(4);
+          expect(res).to.deep.equal([
+            {
+              "added": 0,
+              "channel": "ca",
+              "comment": "/* Enllaços externs */",
+              "page": "Israel Ballet"
+            },
+            {
+              "added": 213,
+              "channel": "de",
+              "comment": "/* Begriffsklärung */",
+              "page": "Diskussion:Flüchtlingskrise in Europa 2015"
+            },
+            {
+              "added": 0,
+              "channel": "de",
+              "comment": "tk",
+              "page": "Angelika Wende"
+            },
+            {
+              "added": 0,
+              "channel": "en",
+              "comment": "Archiving 1 discussion(s) to [[Talk:Economic growth/Archive 4]]) (bot",
+              "page": "Talk:Economic growth"
             }
           ]);
         })

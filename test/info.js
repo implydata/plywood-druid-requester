@@ -1,6 +1,6 @@
 /*
  * Copyright 2015-2015 Metamarkets Group Inc.
- * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2015-2018 Imply Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 const DOCKER_MACHINE = '192.168.99.100';
 
 exports.druidHost = `${DOCKER_MACHINE}:8082`;
-exports.druidVersion = '0.11.0-SNAPSHOT';
+exports.druidVersion = '0.13.0-SNAPSHOT';
 
-exports.liveDruidHost = `172.31.${2567/500}:8082`;
+exports.liveDruidHost = `172.31.${641/50}:8082`;
 exports.liveDruidVersion = '0.10.0-iap1';
