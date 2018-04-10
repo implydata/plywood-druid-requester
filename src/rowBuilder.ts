@@ -53,6 +53,7 @@ export class RowBuilder extends Transform {
   private assembler: Assembler;
   private flushRoot: boolean;
   private metaEmitted: boolean;
+  private columns: string[];
   public maybeNoDataSource: boolean;
 
   constructor(options: RowBuilderOptions) {
@@ -157,8 +158,8 @@ export class RowBuilder extends Transform {
             }
             return true;
           };
-          onKeyValueAdd = (key, value) => {
-            if (key !== 'columns') return true;
+          onKeyValueAdd = (key, value, stack, keyStack) => {
+            if (key !== 'columns' || keyStack.length !== 1) return true;
             columns = value;
             return false;
           };
@@ -178,7 +179,6 @@ export class RowBuilder extends Transform {
         break;
 
       case 'segmentMetadata':
-      case 'sql':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
             let d = value;
@@ -186,6 +186,35 @@ export class RowBuilder extends Transform {
             if (cleanupDummy) cleanupDummy(d);
             this.push(d);
             return false;
+          }
+          return true;
+        };
+        break;
+
+      case 'sql':
+        this.columns = [];
+        onArrayPush = (value, stack, keyStack) => {
+          if (keyStack.length === 0) {
+            if (this.columns) {
+              this.emit('meta', {
+                columns: this.columns
+              });
+              this.columns = null;
+            }
+
+            let d = value;
+            if (cleanupIgnore) cleanupIgnore(d);
+            if (cleanupDummy) cleanupDummy(d);
+            this.push(d);
+            return false;
+          }
+          return true;
+        };
+        onKeyValueAdd = (key, value, stack, keyStack) => {
+          if (!this.columns) return true;
+          this.maybeNoDataSource = false;
+          if (keyStack.length === 1 && keyStack[0] === 0) {
+            this.columns.push(String(key));
           }
           return true;
         };

@@ -991,13 +991,24 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it("works with DruidSQL", () => {
-      return toArray(druidRequester({
+    it("works with DruidSQL group by", () => {
+      const requester = druidRequester({
         query: {
           query: "SELECT page, COUNT(*) AS Cnt FROM wikipedia GROUP BY page LIMIT 5"
         }
-      }))
+      });
+
+      let seenMeta = false;
+      requester.on('meta', (meta) => {
+        seenMeta = true;
+        expect(meta).to.deep.equal({
+          columns: ['page', 'Cnt']
+        });
+      });
+
+      return toArray(requester)
         .then((res) => {
+          expect(seenMeta).to.equal(true);
           expect(res).to.deep.equal([
             {
               "Cnt": 1,
