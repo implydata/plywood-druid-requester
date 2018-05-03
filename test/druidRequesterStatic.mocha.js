@@ -48,7 +48,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.equal("No such datasource");
+          expect(err.message).to.equal("No such datasource 'wikipedia_borat'");
         })
     });
 
@@ -64,7 +64,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.equal("No such datasource");
+          expect(err.message).to.equal("No such datasource 'wikipedia_borat'");
         });
     });
 
@@ -113,7 +113,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.equal("No such datasource");
+          expect(err.message).to.equal("No such datasource 'wikipedia_borat'");
         })
     });
 
@@ -936,7 +936,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.equal("No such datasource");
+          expect(err.message).to.equal("No such datasource 'wikipedia_borat'");
         })
     });
 

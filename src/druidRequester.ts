@@ -221,8 +221,9 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       }
     })
       .then((resp): any => {
-        if (getDataSourcesFromQuery(query).every((dataSource) => resp.indexOf(dataSource) < 0)) {
-          throw new Error("No such datasource");
+        const dataSourcesInQuery = getDataSourcesFromQuery(query);
+        if (dataSourcesInQuery.every((dataSource) => resp.indexOf(dataSource) < 0)) {
+          throw new Error(`No such datasource '${dataSourcesInQuery[0]}'`);
         }
 
         return null;
