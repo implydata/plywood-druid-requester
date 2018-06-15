@@ -960,6 +960,7 @@ describe("Druid requester static data source", function() {
             "comment",
             "commentLength",
             "commentLengthStr",
+            "commentTerms",
             "count",
             "countryIsoCode",
             "countryName",
