@@ -969,6 +969,7 @@ describe("Druid requester static data source", function() {
             "deltaBucket100",
             "deltaByTen",
             "delta_hist",
+            "geohash",
             "isAnonymous",
             "isMinor",
             "isNew",

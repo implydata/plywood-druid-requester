@@ -100,7 +100,7 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
       if (typeof authToken.username !== 'string') throw new Error('basic-auth must set username');
       if (typeof authToken.password !== 'string') throw new Error('basic-auth must set password');
 
-      headers["Authorization"] = "Basic " + new Buffer(authToken.username + ':' + authToken.password).toString('base64');
+      headers["Authorization"] = "Basic " + Buffer.from(authToken.username + ':' + authToken.password).toString('base64');
       break;
 
     case 'imply-token-hmac':
