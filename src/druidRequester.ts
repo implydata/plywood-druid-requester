@@ -42,6 +42,9 @@ export interface DruidRequesterParameters {
   timeout?: number;
   protocol?: Protocol;
   ca?: string;
+  cert?: any;
+  key?: any;
+  passphrase?: string;
   urlBuilder?: DruidUrlBuilder;
   requestDecorator?: DruidRequestDecorator;
   authToken?: AuthToken;
@@ -121,7 +124,7 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, protocol, ca, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
+  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
 
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
@@ -159,7 +162,10 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
         if (secure) {
           options.strictSSL = (protocol === 'tls');
-          if (ca) options.ca = ca;
+          if (parameters.ca) options.ca = parameters.ca;
+          if (parameters.cert) options.cert = parameters.cert;
+          if (parameters.key) options.key = parameters.key;
+          if (parameters.passphrase) options.passphrase = parameters.passphrase;
         }
 
         options.headers = options.headers || {};
