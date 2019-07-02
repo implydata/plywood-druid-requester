@@ -95,27 +95,27 @@ interface RequestWithDecorationOptions {
   options: request.OptionsWithUrl;
 }
 
-export function applyAuthTokenToHeaders(headers: Record<string, string>, authToken: AuthToken): void {
+export function applyAuthTokenToHeaders(headers: Record<string, string>, authToken: AuthToken, setHeader?: (key: string, value: string) => void): void {
   if (!authToken) return;
 
+  if (!setHeader) {
+    setHeader = (key, value) => headers[key] = value;
+  }
   switch (authToken.type) {
     case 'basic-auth':
       if (typeof authToken.username !== 'string') throw new Error('basic-auth must set username');
       if (typeof authToken.password !== 'string') throw new Error('basic-auth must set password');
 
-      headers["Authorization"] = "Basic " + Buffer.from(authToken.username + ':' + authToken.password).toString('base64');
+      setHeader("Authorization", "Basic " + Buffer.from(authToken.username + ':' + authToken.password).toString('base64'));
       break;
 
     case 'imply-token-hmac':
       if (typeof authToken.implyToken !== 'string') throw new Error('imply-token-hmac must set implyToken');
       if (typeof authToken.implyHmac !== 'string') throw new Error('imply-token-hmac must set implyHmac');
 
-      headers["X-Imply-Token"] = authToken.implyToken;
-      headers["X-Imply-HMAC"] = authToken.implyHmac;
+      setHeader("X-Imply-Token", authToken.implyToken);
+      setHeader("X-Imply-HMAC", authToken.implyHmac);
 
-      // Temp send headers without X also
-      headers["Imply-Token"] = authToken.implyToken;
-      headers["Imply-HMAC"] = authToken.implyHmac;
       break;
 
     default:
