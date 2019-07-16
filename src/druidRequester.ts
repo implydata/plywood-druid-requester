@@ -65,6 +65,7 @@ export interface Decoration {
   headers?: Record<string, string>;
   query?: string | object;
   resultType?: string;
+  timestampOverride?: string;
 }
 
 function getDataSourcesFromQuery(query: any): string[] {
@@ -199,8 +200,10 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   }
                 }
                 if (decoration.resultType) {
-                  // This is a type hack, ToDo: make proper type here
-                  (options as any).resultType = decoration.resultType;
+                  (options as any).resultType = decoration.resultType; // This is a type hack, ToDo: make proper type here
+                }
+                if (decoration.timestampOverride) {
+                  (options as any).timestampOverride = decoration.timestampOverride; // This is a type hack, ToDo: make proper type here
                 }
                 return options;
               });
@@ -394,7 +397,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                   const rowBuilder = new RowBuilder({
                     resultType: (options as any).resultType || queryType,
                     resultFormat: query.resultFormat,
-                    timestamp: hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp',
+                    timestamp: (options as any).timestampOverride || (hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'),
                     ignorePrefix: context['ignorePrefix'],
                     dummyPrefix: context['dummyPrefix']
                   });
