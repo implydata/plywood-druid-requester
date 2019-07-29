@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { Transform, TransformOptions } from "stream";
-import { Assembler, ObjectIndex } from "./assembler";
+import { Transform, TransformOptions } from 'stream';
+
+import { Assembler, ObjectIndex } from './assembler';
 
 export interface RowBuilderOptions extends TransformOptions {
   resultType: string;
@@ -26,28 +27,27 @@ export interface RowBuilderOptions extends TransformOptions {
 }
 
 export class RowBuilder extends Transform {
-
   static cleanupIgnoreFactory(ignorePrefix: string | null) {
     if (ignorePrefix == null) return null;
     const ignorePrefixLength = ignorePrefix.length;
     return (obj: any) => {
-      for (let k in obj) {
+      for (const k in obj) {
         if (k.substr(0, ignorePrefixLength) === ignorePrefix) delete obj[k];
       }
-    }
+    };
   }
 
   static cleanupDummyFactory(dummyPrefix: string | null) {
     if (dummyPrefix == null) return null;
     const dummyPrefixLength = dummyPrefix.length;
     return (obj: any) => {
-      for (let k in obj) {
+      for (const k in obj) {
         if (k.substr(0, dummyPrefixLength) === dummyPrefix) {
           obj[k.substr(dummyPrefixLength)] = obj[k];
           delete obj[k];
         }
       }
-    }
+    };
   }
 
   private assembler: Assembler;
@@ -60,14 +60,25 @@ export class RowBuilder extends Transform {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    const { resultType, resultFormat, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
+    const {
+      resultType,
+      resultFormat,
+      timestamp = 'timestamp',
+      ignorePrefix = null,
+      dummyPrefix = null,
+    } = options;
     this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
     const cleanupDummy = RowBuilder.cleanupDummyFactory(dummyPrefix);
 
     let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
-    let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
+    let onKeyValueAdd: (
+      key: ObjectIndex,
+      value: any,
+      stack?: any[],
+      keyStack?: ObjectIndex[],
+    ) => boolean = () => {
       this.maybeNoDataSource = false;
       return true;
     };
@@ -75,9 +86,9 @@ export class RowBuilder extends Transform {
     switch (resultType) {
       case 'timeseries':
       case 'timeBoundary':
-        onArrayPush = (value, stack, keyStack) => {
+        onArrayPush = (value, _stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value.result;
+            const d = value.result;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -91,7 +102,7 @@ export class RowBuilder extends Transform {
       case 'topN':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 2 && keyStack[1] === 'result') {
-            let d = value;
+            const d = value;
             if (timestamp) d.timestamp = new Date(stack[1].timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -103,9 +114,9 @@ export class RowBuilder extends Transform {
         break;
 
       case 'groupBy':
-        onArrayPush = (value, stack, keyStack) => {
+        onArrayPush = (value, _stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value.event;
+            const d = value.event;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -117,10 +128,10 @@ export class RowBuilder extends Transform {
         break;
 
       case 'select':
-        onArrayPush = (value, stack, keyStack) => {
+        onArrayPush = (value, _stack, keyStack) => {
           // keyStack = [0, result, events]
           if (keyStack.length === 3 && keyStack[2] === 'events') {
-            let d = value.event;
+            const d = value.event;
             if (timestamp) d[timestamp] = new Date(d.timestamp);
             if (timestamp !== 'timestamp') delete d['timestamp'];
             if (cleanupIgnore) cleanupIgnore(d);
@@ -143,11 +154,11 @@ export class RowBuilder extends Transform {
       case 'scan':
         if (resultFormat === 'compactedList') {
           let columns: string[] = null;
-          onArrayPush = (value, stack, keyStack) => {
+          onArrayPush = (value, _stack, keyStack) => {
             // keyStack = [0, events]
             if (keyStack.length === 2 && keyStack[1] === 'events') {
-              let d: any = {};
-              let n = columns.length;
+              const d: any = {};
+              const n = columns.length;
               for (let i = 0; i < n; i++) {
                 d[columns[i]] = value[i];
               }
@@ -158,16 +169,16 @@ export class RowBuilder extends Transform {
             }
             return true;
           };
-          onKeyValueAdd = (key, value, stack, keyStack) => {
+          onKeyValueAdd = (key, value, _stack, keyStack) => {
             if (key !== 'columns' || keyStack.length !== 1) return true;
             columns = value;
             return false;
           };
         } else {
-          onArrayPush = (value, stack, keyStack) => {
+          onArrayPush = (value, _stack, keyStack) => {
             // keyStack = [0, events]
             if (keyStack.length === 2 && keyStack[1] === 'events') {
-              let d = value;
+              const d = value;
               if (cleanupIgnore) cleanupIgnore(d);
               if (cleanupDummy) cleanupDummy(d);
               this.push(d);
@@ -179,9 +190,9 @@ export class RowBuilder extends Transform {
         break;
 
       case 'segmentMetadata':
-        onArrayPush = (value, stack, keyStack) => {
+        onArrayPush = (value, _stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value;
+            const d = value;
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
             this.push(d);
@@ -193,16 +204,16 @@ export class RowBuilder extends Transform {
 
       case 'sql':
         this.columns = [];
-        onArrayPush = (value, stack, keyStack) => {
+        onArrayPush = (value, _stack, keyStack) => {
           if (keyStack.length === 0) {
             if (this.columns) {
               this.emit('meta', {
-                columns: this.columns
+                columns: this.columns,
               });
               this.columns = null;
             }
 
-            let d = value;
+            const d = value;
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
             this.push(d);
@@ -210,7 +221,7 @@ export class RowBuilder extends Transform {
           }
           return true;
         };
-        onKeyValueAdd = (key, value, stack, keyStack) => {
+        onKeyValueAdd = (key, _value, _stack, keyStack) => {
           if (!this.columns) return true;
           this.maybeNoDataSource = false;
           if (keyStack.length === 1 && keyStack[0] === 0) {
@@ -226,11 +237,11 @@ export class RowBuilder extends Transform {
 
     this.assembler = new Assembler({
       onArrayPush,
-      onKeyValueAdd
+      onKeyValueAdd,
     });
   }
 
-  public _transform(chunk: any, encoding: any, callback: any) {
+  public _transform(chunk: any, _encoding: any, callback: any) {
     this.assembler.process(chunk);
     callback();
   }
@@ -242,4 +253,3 @@ export class RowBuilder extends Transform {
     callback();
   }
 }
-
