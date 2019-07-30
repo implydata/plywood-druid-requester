@@ -73,10 +73,11 @@ export class Assembler {
       } else {
         const { onKeyValueAdd } = this;
         if (
-          !onKeyValueAdd ||
-          onKeyValueAdd.call(this, key || 0, value, this.stack, this.keyStack) !== false
+          key &&
+          (!onKeyValueAdd ||
+            onKeyValueAdd.call(this, key, value, this.stack, this.keyStack) !== false)
         ) {
-          current[key || 0] = value;
+          current[key] = value;
         }
         this.key = undefined;
       }
