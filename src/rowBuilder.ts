@@ -53,7 +53,7 @@ export class RowBuilder extends Transform {
   private assembler: Assembler;
   private flushRoot: boolean;
   private metaEmitted: boolean;
-  private columns: string[];
+  private columns: string[] | undefined;
   public maybeNoDataSource: boolean;
 
   constructor(options: RowBuilderOptions) {
@@ -68,11 +68,13 @@ export class RowBuilder extends Transform {
       dummyPrefix = null,
     } = options;
     this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
+    this.flushRoot = true;
+    this.metaEmitted = false;
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
     const cleanupDummy = RowBuilder.cleanupDummyFactory(dummyPrefix);
 
-    let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
+    let onArrayPush: ((value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean) | undefined;
     let onKeyValueAdd: (
       key: ObjectIndex,
       value: any,
@@ -87,7 +89,7 @@ export class RowBuilder extends Transform {
       case 'timeseries':
       case 'timeBoundary':
         onArrayPush = (value, _stack, keyStack) => {
-          if (keyStack.length === 0) {
+          if (!keyStack || keyStack.length === 0) {
             const d = value.result;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
@@ -101,6 +103,7 @@ export class RowBuilder extends Transform {
 
       case 'topN':
         onArrayPush = (value, stack, keyStack) => {
+          if (!keyStack) return true;
           if (keyStack.length === 2 && keyStack[1] === 'result') {
             const d = value;
             if (timestamp) d.timestamp = new Date(stack[1].timestamp);
@@ -115,7 +118,7 @@ export class RowBuilder extends Transform {
 
       case 'groupBy':
         onArrayPush = (value, _stack, keyStack) => {
-          if (keyStack.length === 0) {
+          if (!keyStack || keyStack.length === 0) {
             const d = value.event;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
@@ -130,6 +133,7 @@ export class RowBuilder extends Transform {
       case 'select':
         onArrayPush = (value, _stack, keyStack) => {
           // keyStack = [0, result, events]
+          if (!keyStack) return true;
           if (keyStack.length === 3 && keyStack[2] === 'events') {
             const d = value.event;
             if (timestamp) d[timestamp] = new Date(d.timestamp);
@@ -153,13 +157,15 @@ export class RowBuilder extends Transform {
 
       case 'scan':
         if (resultFormat === 'compactedList') {
-          let columns: string[] = null;
+          let columns: string[] | undefined;
           onArrayPush = (value, _stack, keyStack) => {
             // keyStack = [0, events]
+            if (!keyStack) return true;
             if (keyStack.length === 2 && keyStack[1] === 'events') {
               const d: any = {};
-              const n = columns.length;
+              const n = columns ? columns.length : 0;
               for (let i = 0; i < n; i++) {
+                // @ts-ignore
                 d[columns[i]] = value[i];
               }
               if (cleanupIgnore) cleanupIgnore(d);
@@ -170,6 +176,7 @@ export class RowBuilder extends Transform {
             return true;
           };
           onKeyValueAdd = (key, value, _stack, keyStack) => {
+            if (!keyStack) return true;
             if (key !== 'columns' || keyStack.length !== 1) return true;
             columns = value;
             return false;
@@ -177,6 +184,7 @@ export class RowBuilder extends Transform {
         } else {
           onArrayPush = (value, _stack, keyStack) => {
             // keyStack = [0, events]
+            if (!keyStack) return true;
             if (keyStack.length === 2 && keyStack[1] === 'events') {
               const d = value;
               if (cleanupIgnore) cleanupIgnore(d);
@@ -191,7 +199,7 @@ export class RowBuilder extends Transform {
 
       case 'segmentMetadata':
         onArrayPush = (value, _stack, keyStack) => {
-          if (keyStack.length === 0) {
+          if (!keyStack || keyStack.length === 0) {
             const d = value;
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -205,12 +213,12 @@ export class RowBuilder extends Transform {
       case 'sql':
         this.columns = [];
         onArrayPush = (value, _stack, keyStack) => {
-          if (keyStack.length === 0) {
+          if (!keyStack || keyStack.length === 0) {
             if (this.columns) {
               this.emit('meta', {
                 columns: this.columns,
               });
-              this.columns = null;
+              this.columns = undefined;
             }
 
             const d = value;
@@ -224,6 +232,7 @@ export class RowBuilder extends Transform {
         onKeyValueAdd = (key, _value, _stack, keyStack) => {
           if (!this.columns) return true;
           this.maybeNoDataSource = false;
+          if (!keyStack) return true;
           if (keyStack.length === 1 && keyStack[0] === 0) {
             this.columns.push(String(key));
           }

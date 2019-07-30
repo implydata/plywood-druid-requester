@@ -44,7 +44,7 @@ export type DruidRequestDecorator = (
 ) => Decoration | Promise<Decoration>;
 
 export interface DruidRequesterParameters {
-  locator?: PlywoodLocator;
+  locator?: PlywoodLocator | undefined;
   host?: string;
   timeout?: number;
   protocol?: Protocol;
@@ -61,7 +61,7 @@ export interface DruidRequesterParameters {
 }
 
 export interface DecoratorRequest {
-  method: string;
+  method: string | undefined;
   url: string;
   query: any;
 }
@@ -105,7 +105,7 @@ interface RequestWithDecorationOptions {
 
 export function applyAuthTokenToHeaders(
   headers: Record<string, string>,
-  authToken: AuthToken,
+  authToken: AuthToken | undefined,
 ): void {
   if (!authToken) return;
 
@@ -242,7 +242,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     return requestOptionsWithDecoration(opt).then(requestPromise);
   }
 
-  function failIfNoDatasource(url: string, query: any, timeout: number): Promise<any> {
+  function failIfNoDatasource(url: string, query: any, timeout: number | undefined): Promise<any> {
     return requestPromiseWithDecoration({
       query: { queryType: 'sourceList' },
       context: {},
@@ -291,8 +291,9 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     }
 
     let url: string;
+    // @ts-ignore
     locator().then(location => {
-      url = urlBuilder(location, secure);
+      url = (urlBuilder || basicUrlBuilder)(location, secure);
 
       if (queryType === 'status') {
         requestPromiseWithDecoration({

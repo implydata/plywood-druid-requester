@@ -35,15 +35,14 @@ export class Assembler {
   public stack: any[] = [];
   public keyStack: ObjectIndex[] = [];
   public current: any = null;
-  public key: ObjectIndex | null = null;
+  public key: ObjectIndex | undefined = undefined;
 
-  private onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean | void;
-  private onKeyValueAdd: (
-    key: ObjectIndex,
-    value: any,
-    stack?: any[],
-    keyStack?: ObjectIndex[],
-  ) => boolean | void;
+  private onArrayPush:
+    | ((value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean | void)
+    | undefined;
+  private onKeyValueAdd:
+    | ((key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean | void)
+    | undefined;
 
   constructor(options: AssemblerOptions = {}) {
     this.onArrayPush = options.onArrayPush;
@@ -51,7 +50,7 @@ export class Assembler {
   }
 
   private _pushStacks(newCurrent: any): void {
-    if (this.current) this.keyStack.push(this.key);
+    if (this.current) this.keyStack.push(this.key || 0);
     this.stack.push((this.current = newCurrent));
   }
 
@@ -75,11 +74,11 @@ export class Assembler {
         const { onKeyValueAdd } = this;
         if (
           !onKeyValueAdd ||
-          onKeyValueAdd.call(this, key, value, this.stack, this.keyStack) !== false
+          onKeyValueAdd.call(this, key || 0, value, this.stack, this.keyStack) !== false
         ) {
-          current[key] = value;
+          current[key || 0] = value;
         }
-        this.key = null;
+        this.key = undefined;
       }
     } else {
       this.current = value;

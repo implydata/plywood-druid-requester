@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "noImplicitAny": true,
     "noEmitOnError": false,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
@@ -9,7 +8,7 @@
     "removeComments": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "strictNullChecks": false,
+    "strict": true,
     "skipLibCheck": false,
     "importHelpers": true,
 
