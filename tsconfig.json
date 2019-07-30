@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
-    "noImplicitAny": true,
-    "noEmitOnError": true,
+    "esModuleInterop": true,
+    "noEmitOnError": false,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
     "declaration": true,
     "removeComments": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "strictNullChecks": false,
+    "strict": true,
     "skipLibCheck": false,
     "importHelpers": true,
+
     "lib": ["es2016"],
     "target": "es5",
     "module": "commonjs",
