@@ -32,7 +32,7 @@ import PlainAgent from 'socks5-http-client/lib/Agent';
 import SecureAgent from 'socks5-https-client/lib/Agent';
 import Combo from 'stream-json/Combo';
 
-import { RowBuilder } from './rowBuilder';
+import { RowBuilder } from '../rowBuilder';
 
 export type Protocol = 'plain' | 'tls-loose' | 'tls';
 
@@ -234,7 +234,6 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           });
         }
       }
-
       return options;
     });
   }
