@@ -68,7 +68,7 @@ export class RowBuilder extends Transform {
       dummyPrefix = null,
     } = options;
     this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
-    this.flushRoot = true;
+    this.flushRoot = false;
     this.metaEmitted = false;
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
