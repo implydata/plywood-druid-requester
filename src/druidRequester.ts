@@ -75,6 +75,8 @@ function getDataSourcesFromQuery(query: any): string[] {
     return [queryDataSource];
   } else if (queryDataSource.type === "union") {
     return queryDataSource.dataSources;
+  } else if (queryDataSource.type === "query") {
+    return getDataSourcesFromQuery(queryDataSource.query);
   } else {
     throw new Error(`unsupported datasource type '${queryDataSource.type}'`);
   }
