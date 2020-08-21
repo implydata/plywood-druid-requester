@@ -20,6 +20,7 @@ import { ReadableStream, PassThrough } from 'readable-stream';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-native';
+import { CancelToken } from "cancel-token";
 import * as concat from 'concat-stream';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
@@ -51,6 +52,7 @@ export interface DruidRequesterParameters {
   socksHost?: string;
   socksUsername?: string;
   socksPassword?: string;
+  cancelToken?: CancelToken;
 }
 
 export interface DecoratorRequest {
@@ -127,7 +129,7 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost } = parameters;
+  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost, cancelToken } = parameters;
 
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
@@ -339,6 +341,8 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           query.context.timeout = timeout;
         }
 
+        const queryId = query.context.queryId;
+
         requestOptionsWithDecoration({
           query,
           context,
@@ -354,6 +358,19 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
         })
           .then(
             (options) => {
+              // if (cancelToken) {
+              //   cancelToken.throwIfRequested();
+              //
+              //   if (queryId && queryType !== 'sql') {
+              //     cancelToken.promise.then(() => {
+              //       request({
+              //         method: "DELETE",
+              //         url: url + "/druid/v2/" + queryId,
+              //       });
+              //     })
+              //   }
+              // }
+
               request(options)
                 .on('error', (err: any) => {
                   if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");

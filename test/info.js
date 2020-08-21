@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-const DOCKER_MACHINE = '192.168.99.100';
+const DOCKER_MACHINE = 'localhost';
 
 exports.druidHost = `${DOCKER_MACHINE}:8082`;
-exports.druidVersion = '0.12.2-iap5';
+exports.druidVersion = '0.18.0-iap4';
 
 exports.liveDruidHost = `172.31.${1279/250}:8082`;
-exports.liveDruidVersion = '0.12.2-iap5';
+exports.liveDruidVersion = '0.18.0-iap4';

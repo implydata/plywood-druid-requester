@@ -16,6 +16,7 @@
  */
 
 const { expect } = require("chai");
+const { CancelToken } = require("cancel-token");
 const toArray = require("stream-to-array");
 
 let { druidRequesterFactory } = require('../build/druidRequester');
@@ -95,7 +96,7 @@ describe("Druid requester static data source", function() {
           throw new Error('DID_NOT_ERROR');
         })
         .catch((err) => {
-          expect(err.message).to.contain("Could not resolve type id 'timeTravel' into a subtype of [simple type, class io.druid.query.Query]");
+          expect(err.message).to.contain("Could not resolve type id 'timeTravel' as a subtype of");
         })
     });
 
@@ -195,7 +196,7 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it("works with timeBoundary", () => {
+    it.only("works with timeBoundary", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "timeBoundary",
@@ -234,7 +235,7 @@ describe("Druid requester static data source", function() {
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
-              "Count": 11391,
+              "Count": 11392,
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             },
             {
@@ -278,7 +279,7 @@ describe("Druid requester static data source", function() {
               "timestamp": new Date('2015-09-12T00:00:00.000Z')
             },
             {
-              "Count": 11391,
+              "Count": 11392,
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             },
             {
@@ -541,66 +542,6 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it("works with regular select", () => {
-      const requester = druidRequester({
-        query: {
-          "queryType": "select",
-          "dataSource": "wikipedia",
-          "dimensions": [
-            "page"
-          ],
-          "granularity": "all",
-          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
-          "metrics": [
-            "count",
-            "added"
-          ],
-          "pagingSpec": {
-            "pagingIdentifiers": {},
-            "threshold": 4
-          }
-        }
-      });
-
-      let seenMeta = false;
-      requester.on('meta', (meta) => {
-        seenMeta = true;
-        expect(meta).to.have.key('pagingIdentifiers');
-      });
-
-      return toArray(requester)
-        .then((res) => {
-          expect(seenMeta).to.equal(true);
-          expect(res.length).to.equal(4);
-          expect(res).to.deep.equal([
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Israel Ballet",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 213,
-              "count": 1,
-              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Angelika Wende",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Talk:Economic growth",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            }
-          ]);
-        })
-    });
-
     it("works with regular scan (list)", () => {
       const requester = druidRequester({
         query: {
@@ -703,122 +644,6 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it("works with regular select with special timestamp", () => {
-      const requester = druidRequester({
-        query: {
-          "queryType": "select",
-          "dataSource": "wikipedia",
-          "dimensions": [
-            "page"
-          ],
-          "granularity": "all",
-          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
-          "metrics": [
-            "count",
-            "added"
-          ],
-          "pagingSpec": {
-            "pagingIdentifiers": {},
-            "threshold": 4
-          }
-        },
-        context: {
-          timestamp: 'time'
-        }
-      });
-
-      return toArray(requester)
-        .then((res) => {
-          expect(res.length).to.equal(4);
-          expect(res).to.deep.equal([
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Israel Ballet",
-              "time": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 213,
-              "count": 1,
-              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
-              "time": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Angelika Wende",
-              "time": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Talk:Economic growth",
-              "time": new Date('2015-09-12T00:46:00.000Z')
-            }
-          ]);
-        })
-    });
-
-    it("works with granularity select", () => {
-      const requester = druidRequester({
-        query: {
-          "queryType": "select",
-          "dataSource": "wikipedia",
-          "dimensions": [
-            "page"
-          ],
-          "granularity": "hour",
-          "intervals": "2015-09-12/2015-09-12T02:00:00Z",
-          "metrics": [
-            "count",
-            "added"
-          ],
-          "pagingSpec": {
-            "pagingIdentifiers": {},
-            "threshold": 2
-          }
-        }
-      });
-
-      let seenMeta = false;
-      requester.on('meta', (meta) => {
-        seenMeta = true;
-        expect(meta).to.have.key('pagingIdentifiers');
-      });
-
-      return toArray(requester)
-        .then((res) => {
-          expect(seenMeta).to.equal(true);
-          expect(res.length).to.equal(4);
-          expect(res).to.deep.equal([
-            {
-              "added": 0,
-              "count": 1,
-              "page": "Israel Ballet",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 213,
-              "count": 1,
-              "page": "Diskussion:Flüchtlingskrise in Europa 2015",
-              "timestamp": new Date('2015-09-12T00:46:00.000Z')
-            },
-            {
-              "added": 12,
-              "count": 1,
-              "page": "عملية بوجينكا",
-              "timestamp": new Date('2015-09-12T01:00:00.000Z')
-            },
-            {
-              "added": 39,
-              "count": 1,
-              "page": "بوليطية",
-              "timestamp": new Date('2015-09-12T01:00:00.000Z')
-            }
-          ]);
-        })
-    });
-
     it("works with timeseries with complex agg", () => {
       return toArray(druidRequester({
         query: {
@@ -895,7 +720,7 @@ describe("Druid requester static data source", function() {
                   2
                 ]
               },
-              "Count": 11391,
+              "Count": 11392,
               "P95": 130.39272,
               "timestamp": new Date('2015-09-12T01:00:00.000Z')
             }
@@ -960,7 +785,6 @@ describe("Druid requester static data source", function() {
             "comment",
             "commentLength",
             "commentLengthStr",
-            "commentTerms",
             "count",
             "countryIsoCode",
             "countryName",
@@ -969,6 +793,7 @@ describe("Druid requester static data source", function() {
             "deltaBucket100",
             "deltaByTen",
             "delta_hist",
+            "delta_quantilesDoublesSketch",
             "geohash",
             "isAnonymous",
             "isMinor",
@@ -987,6 +812,7 @@ describe("Druid requester static data source", function() {
             "sometimeLaterMs",
             "user",
             "userChars",
+            "user_hll",
             "user_theta",
             "user_unique"
           ]);
@@ -1049,7 +875,6 @@ describe("Druid requester static data source", function() {
 
   });
 
-
   describe("timeout", () => {
     it("works in simple case", () => {
       let timeoutDruidRequester = druidRequesterFactory({
@@ -1081,6 +906,48 @@ describe("Druid requester static data source", function() {
         })
         .catch((err) => {
           expect(err.message).to.equal("timeout");
+        });
+    });
+  });
+
+  describe("cancel", () => {
+    it("works in simple case", () => {
+      let { token, cancel } = CancelToken.source();
+
+      let cancelDruidRequester = druidRequesterFactory({
+        host: info.druidHost,
+        timeout: 5000,
+        cancelToken: token,
+      });
+
+      setTimeout(cancel, 20);
+
+      return toArray(cancelDruidRequester({
+        query: {
+          "queryType": "groupBy",
+          "dataSource": "wikipedia",
+          "intervals": "2015-09-12/2015-09-12T01:00:00Z",
+          "granularity": "all",
+          "context": {
+            "useCache": false,
+            "populateCache": false,
+            "queryId": "query-xyz"
+          },
+          "aggregations": [{ "name": "RowCount", "type": "count" }],
+          "dimensions": ['page', 'user', 'channel'],
+          "limitSpec": {
+            "columns": ["RowCount"],
+            "limit": 100,
+            "type": "default"
+          }
+        }
+      }))
+        .then((res) => {
+          console.log(res.length);
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.equal("Query cancelled: Task was cancelled.");
         });
     });
   });
