@@ -23,34 +23,10 @@ let { druidRequesterFactory } = require('../build/druidRequester');
 
 let nock = require('nock');
 
-
 describe("Druid requester intercept", function() {
-
-  it("works with a simple intercept GET", () => {
-    let druidRequester = druidRequesterFactory({
-      host: 'a.druid.host'
-    });
-
-    nock('http://a.druid.host:8082')
-      .get('/druid/v2/datasources/dsz')
-      .reply(200, {
-        dimensions: ['lol'],
-        measures: []
-      });
-
-    return toArray(druidRequester({
-      query: {
-        "queryType": "introspect",
-        "dataSource": 'dsz'
-      }
-    }))
-      .then((res) => {
-        expect(res.length).to.equal(1);
-        expect(res[0]).to.deep.equal({
-          dimensions: ['lol'],
-          measures: []
-        });
-      });
+  after(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
   });
 
   it("works with a simple intercept POST", () => {
