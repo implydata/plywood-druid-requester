@@ -16,7 +16,7 @@
  */
 
 const { expect } = require("chai");
-const { CancelToken } = require("cancel-token");
+const { CancelToken } = require("axios");
 const toArray = require("stream-to-array");
 
 let { druidRequesterFactory } = require('../build/druidRequester');
@@ -196,7 +196,7 @@ describe("Druid requester static data source", function() {
         })
     });
 
-    it.only("works with timeBoundary", () => {
+    it("works with timeBoundary", () => {
       return toArray(druidRequester({
         query: {
           "queryType": "timeBoundary",
@@ -911,7 +911,7 @@ describe("Druid requester static data source", function() {
   });
 
   describe("cancel", () => {
-    it("works in simple case", () => {
+    it("works in native case", () => {
       let { token, cancel } = CancelToken.source();
 
       let cancelDruidRequester = druidRequesterFactory({
@@ -926,7 +926,7 @@ describe("Druid requester static data source", function() {
         query: {
           "queryType": "groupBy",
           "dataSource": "wikipedia",
-          "intervals": "2015-09-12/2015-09-12T01:00:00Z",
+          "intervals": "2015-09-12/2015-09-13",
           "granularity": "all",
           "context": {
             "useCache": false,
@@ -940,6 +940,41 @@ describe("Druid requester static data source", function() {
             "limit": 100,
             "type": "default"
           }
+        }
+      }))
+        .then((res) => {
+          console.log(res.length);
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.equal("Query cancelled: Task was cancelled.");
+        });
+    });
+
+    it("works in sql case", () => {
+      let { token, cancel } = CancelToken.source();
+
+      let cancelDruidRequester = druidRequesterFactory({
+        host: info.druidHost,
+        timeout: 5000,
+        cancelToken: token,
+      });
+
+      setTimeout(cancel, 100);
+
+      return toArray(cancelDruidRequester({
+        query: {
+          query: `SELECT
+  "user",
+  "page", COUNT(*) AS "Count"
+FROM "wikipedia"
+GROUP BY 1, 2
+ORDER BY "Count" DESC`,
+          "context": {
+            "useCache": false,
+            "populateCache": false,
+            "queryId": "query-sql-xyz"
+          },
         }
       }))
         .then((res) => {

@@ -20,7 +20,7 @@ import { ReadableStream, PassThrough } from 'readable-stream';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-native';
-import { CancelToken } from "cancel-token";
+import { CancelToken } from 'axios';
 import * as concat from 'concat-stream';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
@@ -341,7 +341,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           query.context.timeout = timeout;
         }
 
-        const queryId = query.context.queryId;
+        const queryId = (query.context || {}).queryId;
 
         requestOptionsWithDecoration({
           query,
@@ -358,18 +358,18 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
         })
           .then(
             (options) => {
-              // if (cancelToken) {
-              //   cancelToken.throwIfRequested();
-              //
-              //   if (queryId && queryType !== 'sql') {
-              //     cancelToken.promise.then(() => {
-              //       request({
-              //         method: "DELETE",
-              //         url: url + "/druid/v2/" + queryId,
-              //       });
-              //     })
-              //   }
-              // }
+              if (cancelToken) {
+                cancelToken.throwIfRequested();
+
+                if (queryId) {
+                  cancelToken.promise.then(() => {
+                    return requestPromise({
+                      method: "DELETE",
+                      url: url + "/druid/v2/" + queryId,
+                    });
+                  }).catch(() => {}) // Don't worry node about it if it fails
+                }
+              }
 
               request(options)
                 .on('error', (err: any) => {
