@@ -61,6 +61,42 @@ describe("Druid requester intercept", function() {
       });
   });
 
+  it("works with getQueryId", () => {
+    let druidRequester = druidRequesterFactory({
+      host: 'a.druid.host',
+      getQueryId: () => 'query-id-xyz'
+    });
+
+    nock('http://a.druid.host:8082')
+      .post('/druid/v2/', {
+        "queryType": "topN",
+        "dataSource": 'dsz',
+        "context": {
+          "queryId": 'query-id-xyz',
+        }
+      })
+      .reply(200, [{
+        timestamp: '2015-01-01T01:01:01Z',
+        result: [{
+          lol: 'data'
+        }]
+      }]);
+
+    return toArray(druidRequester({
+      query: {
+        "queryType": "topN",
+        "dataSource": 'dsz'
+      }
+    }))
+      .then((res) => {
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
+          timestamp: new Date('2015-01-01T01:01:01Z'),
+          lol: 'data'
+        });
+      });
+  });
+
   it("works with a different URL builder", () => {
     let druidRequester = druidRequesterFactory({
       host: 'localhost',

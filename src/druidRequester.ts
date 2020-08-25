@@ -53,6 +53,7 @@ export interface DruidRequesterParameters {
   socksUsername?: string;
   socksPassword?: string;
   cancelToken?: CancelToken;
+  getQueryId?: () => string;
 }
 
 export interface DecoratorRequest {
@@ -129,7 +130,7 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost, cancelToken } = parameters;
+  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost, cancelToken, getQueryId } = parameters;
 
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
@@ -246,6 +247,13 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
   return (req): ReadableStream => {
     let context = req.context || {};
     let query = req.query;
+
+    if (getQueryId) {
+      query = Object.assign({}, query, {
+        context: Object.assign({}, query.context || {}, { queryId: getQueryId() })
+      });
+    }
+
     let { queryType, intervals } = query;
 
     // Maybe Druid SQL
