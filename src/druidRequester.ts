@@ -20,7 +20,7 @@ import { ReadableStream, PassThrough } from 'readable-stream';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-native';
-import { CancelToken } from 'axios';
+import { Cancel, CancelToken } from 'axios';
 import * as concat from 'concat-stream';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
@@ -265,7 +265,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       return stream;
     }
 
-    function streamError(e: Error) {
+    function streamError(e: Error | Cancel) {
       (e as any).query = query;
       stream.emit('error', e);
       stream.end();
@@ -359,7 +359,10 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           .then(
             (options) => {
               if (cancelToken) {
-                cancelToken.throwIfRequested();
+                if (cancelToken.reason) {
+                  streamError(cancelToken.reason);
+                  return;
+                }
 
                 if (queryId) {
                   cancelToken.promise.then(() => {

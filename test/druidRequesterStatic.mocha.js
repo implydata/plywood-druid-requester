@@ -911,6 +911,33 @@ describe("Druid requester static data source", function() {
   });
 
   describe("cancel", () => {
+    it("works in precancel case", () => {
+      let { token, cancel } = CancelToken.source();
+      cancel('Token pre-canceled.');
+
+      let cancelDruidRequester = druidRequesterFactory({
+        host: info.druidHost,
+        timeout: 5000,
+        cancelToken: token,
+      });
+
+      setTimeout(cancel, 20);
+
+      return toArray(cancelDruidRequester({
+        query: {
+          "queryType": "groupBy",
+          "dataSource": "wikipedia",
+        }
+      }))
+        .then((res) => {
+          console.log(res.length);
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.equal("Token pre-canceled.");
+        });
+    });
+
     it("works in native case", () => {
       let { token, cancel } = CancelToken.source();
 
