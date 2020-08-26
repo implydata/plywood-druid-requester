@@ -101,7 +101,7 @@ interface RequestWithDecorationOptions {
   options: request.OptionsWithUrl;
 }
 
-export function applyAuthTokenToHeaders(headers: Record<string, string>, authToken: AuthToken): void {
+export function applyAuthTokenToHeaders(headers: Record<string, string>, authToken: AuthToken | undefined): void {
   if (!authToken) return;
 
   switch (authToken.type) {
