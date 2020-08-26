@@ -54,6 +54,25 @@ describe("Druid requester static data source", function() {
     });
 
 
+    it("correct error for bad datasource (table syntax)", () => {
+      return toArray(druidRequester({
+        query: {
+          "queryType": "timeBoundary",
+          "dataSource": {
+            type: 'table',
+            name: 'wikipedia_borat'
+          }
+        }
+      }))
+        .then(() => {
+          throw new Error('DID_NOT_ERROR');
+        })
+        .catch((err) => {
+          expect(err.message).to.equal("No such datasource 'wikipedia_borat'");
+        })
+    });
+
+
     it("correct error for bad datasource that does not exist (on introspect)", () => {
       return toArray(druidRequester({
         query: {

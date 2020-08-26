@@ -76,12 +76,15 @@ function getDataSourcesFromQuery(query: any): string[] {
   if (!queryDataSource) return [];
   if (typeof queryDataSource === 'string') {
     return [queryDataSource];
+  } else if (queryDataSource.type === "table") {
+    return [queryDataSource.name];
   } else if (queryDataSource.type === "union") {
     return queryDataSource.dataSources;
   } else if (queryDataSource.type === "query") {
     return getDataSourcesFromQuery(queryDataSource.query);
   } else {
-    throw new Error(`unsupported datasource type '${queryDataSource.type}'`);
+    // If we can not find a data source, that is ok, avoid the data source existence check
+    return [];
   }
 }
 
