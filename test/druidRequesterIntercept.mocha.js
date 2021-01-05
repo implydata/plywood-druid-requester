@@ -170,13 +170,13 @@ describe("Druid requester intercept", function() {
       host: 'localhost',
       authToken: {
         type: 'bearer-auth',
-        bearerToken: 'Bearer: abc123def456',
+        bearerToken: 'Bearer abc123def456',
       }
     });
 
     nock('http://localhost:8082', {
       reqheaders: {
-        'Authorization': 'Bearer: abc123def456',
+        'Authorization': 'Bearer abc123def456',
       }
     })
       .post('/druid/v2/', {
