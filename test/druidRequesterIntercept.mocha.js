@@ -165,6 +165,42 @@ describe("Druid requester intercept", function() {
       });
   });
 
+  it("works with a bearer auth token", () => {
+    let druidRequester = druidRequesterFactory({
+      host: 'localhost',
+      authToken: {
+        type: 'bearer-auth',
+        bearerToken: 'Bearer: abc123def456',
+      }
+    });
+
+    nock('http://localhost:8082', {
+      reqheaders: {
+        'Authorization': 'Bearer: abc123def456',
+      }
+    })
+      .post('/druid/v2/', {
+        'queryType': 'topNz',
+        'dataSource': 'dsz'
+      })
+      .reply(200, {
+        lol: 'data'
+      });
+
+    return toArray(druidRequester({
+      query: {
+        'queryType': 'topNz',
+        'dataSource': 'dsz'
+      }
+    }))
+      .then((res) => {
+        expect(res.length).to.equal(1);
+        expect(res[0]).to.deep.equal({
+          lol: 'data'
+        });
+      });
+  });
+
   context('with sync requestDecorator', () => {
     let druidRequester;
 
