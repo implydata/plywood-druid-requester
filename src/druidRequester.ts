@@ -127,6 +127,11 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
       headers["Imply-HMAC"] = authToken.implyHmac;
       break;
 
+    case 'bearer-auth':
+      if (typeof authToken.bearerToken !== 'string') throw new Error('bearer-auth must set implyIdentityToken');
+      headers["Authorization"] = authToken.bearerToken;
+      break;
+
     default:
       throw new Error(`unknown auth token type '${authToken.type}'`);
   }
