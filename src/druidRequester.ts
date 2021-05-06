@@ -283,7 +283,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
     function streamError(e: Error | Cancel) {
       (e as any).query = query;
-      (e as any).queryId = query.context.queryId;
+      (e as any).queryId = (query.context || {}).queryId;
       stream.emit('error', e);
       stream.end();
     }

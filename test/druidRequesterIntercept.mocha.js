@@ -461,6 +461,7 @@ describe("Druid requester intercept", function() {
       .then(() => { throw new Error('did not throw') })
       .catch((e) => {
         expect(e.message).to.equal('Opps');
+        expect(e.queryId).to.equal('12345')
       });
   });
 
