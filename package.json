@@ -32,7 +32,7 @@
     "axios": "~0.18.0",
     "concat-stream": "~1.6.2",
     "has-own-prop": "~1.0.1",
-    "plywood-base-api": "~0.2.8",
+    "plywood-base-api": "~0.2.9",
     "readable-stream": "~3.0.3",
     "request": "~2.88.0",
     "request-promise-native": "~1.0.5",
