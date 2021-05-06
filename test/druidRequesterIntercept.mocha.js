@@ -439,12 +439,14 @@ describe("Druid requester intercept", function() {
   it("formats plain error", () => {
     let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
+      getQueryId: () => '12345'
     });
 
     nock('http://a.druid.host:8082')
       .post('/druid/v2/', {
         "queryType": "groupBy",
-        "dataSource": 'dsz'
+        "dataSource": 'dsz',
+        context: { queryId: '12345' }
       })
       .reply(500, {
         "error": "Opps"
