@@ -18,7 +18,7 @@
 const DOCKER_MACHINE = 'localhost';
 
 exports.druidHost = `${DOCKER_MACHINE}:8082`;
-exports.druidVersion = '0.18.0-iap4';
+exports.druidVersion = '0.20.0-iap4.1';
 
 exports.liveDruidHost = `172.31.${1279/250}:8082`;
 exports.liveDruidVersion = '0.18.0-iap4';
