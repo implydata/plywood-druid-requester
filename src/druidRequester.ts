@@ -462,6 +462,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
                   response
                     .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
+                    .on('error', streamError)
                     .pipe(rowBuilder)
                     .pipe(stream, { end: false });
 
