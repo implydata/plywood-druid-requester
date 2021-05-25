@@ -465,8 +465,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                     .on('error', streamError)
                     .pipe(rowBuilder)
                     .on('error', streamError)
-                    .pipe(stream, { end: false })
-                    .on('error', streamError);
+                    .pipe(stream, { end: false });
 
                   // rq.on('error', (e: any) => stream.emit('error', e));
                   // rq.on('data', (c: any) => stream.push(c));

@@ -61,6 +61,36 @@ describe("Druid requester intercept", function() {
       });
   });
 
+  it("works with an invalid response", () => {
+    let druidRequester = druidRequesterFactory({
+      host: 'a.druid.host'
+    });
+
+    nock('http://a.druid.host:8082')
+      .post('/druid/v2/', {
+        "queryType": "topN",
+        "dataSource": 'dsz'
+      })
+      .reply(200, `[{
+        "timestamp": "2015-01-01T01:01:01Z",
+        "result": [{
+          "lol": "dataNoQuoteAtTheEndOfThisValue
+        }]
+      }]`, { 'Content-Type': 'application/json'  });
+
+    return toArray(druidRequester({
+      query: {
+        "queryType": "topN",
+        "dataSource": 'dsz'
+      }
+    }))
+      .then(() => {
+        throw new Error('DID_NOT_ERROR');
+      }, (e) => {
+        expect(e.message).to.equal('Parser has expected a string value');
+      });
+  });
+
   it("works with getQueryId", () => {
     let druidRequester = druidRequesterFactory({
       host: 'a.druid.host',
