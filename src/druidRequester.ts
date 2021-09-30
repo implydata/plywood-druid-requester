@@ -71,21 +71,31 @@ export interface Decoration {
   timestampOverride?: string;
 }
 
-function getDataSourcesFromQuery(query: any): string[] {
-  let queryDataSource = query.dataSource;
-  if (!queryDataSource) return [];
-  if (typeof queryDataSource === 'string') {
-    return [queryDataSource];
-  } else if (queryDataSource.type === "table") {
-    return [queryDataSource.name];
-  } else if (queryDataSource.type === "union") {
-    return queryDataSource.dataSources;
-  } else if (queryDataSource.type === "query") {
-    return getDataSourcesFromQuery(queryDataSource.query);
-  } else {
-    // If we can not find a data source, that is ok, avoid the data source existence check
-    return [];
+function resolveDataSources(dataSource: any): string[] {
+  if (!dataSource) return [];
+  if (typeof dataSource === 'string') {
+    return [dataSource];
   }
+
+  switch (dataSource.type) {
+    case "table":
+      return [dataSource.name];
+    case "union":
+      return dataSource.dataSources;
+    case "query":
+      return resolveDataSources(dataSource.query.dataSource);
+    case "join":
+      return Array.from(new Set([
+        ...resolveDataSources(dataSource.left),
+        ...resolveDataSources(dataSource.right),
+      ]))
+    default:
+      return [];
+  }
+}
+
+function getDataSourcesFromQuery(query: any): string[] {
+  return resolveDataSources(query.dataSource);
 }
 
 function basicUrlBuilder(location: Location, secure: boolean): string {
