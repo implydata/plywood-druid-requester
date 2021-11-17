@@ -243,7 +243,7 @@ describe("Druid requester static data source", function() {
           "aggregations": [
             { "type": "count", "name": "Count" }
           ],
-          "intervals": ["2015-09-12T00:00:00/2015-09-12T05:00:00"]
+          "intervals": {"type":"intervals","intervals": ["2015-09-12T00:00:00/2015-09-12T05:00:00"]}
         }
       }))
         .then((res) => {

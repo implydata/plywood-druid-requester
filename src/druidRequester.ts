@@ -274,7 +274,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     });
 
     // Little hack: allow these special intervals to perform a query-less return
-    if (intervals && (intervals === "1000-01-01/1000-01-02" || !intervals.length)) {
+    if (intervals && (intervals === "1000-01-01/1000-01-02" || (Array.isArray(intervals) && !intervals.length))) {
       process.nextTick(() => {
         stream.push(null);
       });
