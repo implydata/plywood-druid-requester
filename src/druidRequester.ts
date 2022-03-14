@@ -128,7 +128,7 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
       break;
 
     case 'bearer-auth':
-      if (typeof authToken.bearerToken !== 'string') throw new Error('bearer-auth must set implyIdentityToken');
+      if (typeof authToken.bearerToken !== 'string') throw new Error('bearer-auth must set bearerToken');
       headers["Authorization"] = authToken.bearerToken;
       break;
 
