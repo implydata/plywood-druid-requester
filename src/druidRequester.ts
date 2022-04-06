@@ -20,12 +20,22 @@ import { ReadableStream, PassThrough } from 'readable-stream';
 import * as request from 'request';
 import * as hasOwnProperty from 'has-own-prop'
 import * as requestPromise from 'request-promise-native';
-import { Cancel, CancelToken } from 'axios';
 import * as concat from 'concat-stream';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
 import { RowBuilder } from './rowBuilder';
+
+// Cancel types copied from axios
+export interface Cancel {
+  message: string | undefined;
+}
+
+export interface CancelToken {
+  promise: Promise<Cancel>;
+  reason?: Cancel;
+  throwIfRequested(): void;
+}
 
 export type Protocol = 'plain' | 'tls-loose' | 'tls';
 

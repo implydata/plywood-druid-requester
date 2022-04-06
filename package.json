@@ -29,7 +29,6 @@
     "test": "mocha"
   },
   "dependencies": {
-    "axios": "~0.18.0",
     "concat-stream": "~1.6.2",
     "has-own-prop": "~1.0.1",
     "plywood-base-api": "~0.2.9",
