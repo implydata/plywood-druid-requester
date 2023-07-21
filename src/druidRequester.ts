@@ -432,7 +432,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
                           if (body && typeof body.host === 'string') error.host = body.host;
                         }
                       } catch (e) {
-                        error = new Error(`bad response: ${e.message}`);
+                        error = new Error(`bad response: ${e.message}` + '\n' + resp);
                       }
 
                       streamError(error);
