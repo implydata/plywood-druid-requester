@@ -1,0 +1,16 @@
+{
+  "extends": "@awesome-code-style",
+  "parserOptions": {
+    "project": "./tsconfig.lint.json"
+  },
+  "env": { "node": true },
+  "overrides": [
+    {
+      "files": ["test/*.js"],
+      "env": { "mocha": true },
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ]
+}

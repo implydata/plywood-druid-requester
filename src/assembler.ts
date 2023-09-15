@@ -23,7 +23,12 @@ export type ObjectIndex = string | number;
 
 export interface AssemblerOptions {
   onArrayPush?: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean | void;
-  onKeyValueAdd?: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean | void;
+  onKeyValueAdd?: (
+    key: ObjectIndex,
+    value: any,
+    stack?: any[],
+    keyStack?: ObjectIndex[],
+  ) => boolean | void;
 }
 
 export class Assembler {
@@ -32,8 +37,18 @@ export class Assembler {
   public current: any = null;
   public key: ObjectIndex | null = null;
 
-  private onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean | void;
-  private onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean | void;
+  private readonly onArrayPush: (
+    value: any,
+    stack: any[],
+    keyStack?: ObjectIndex[],
+  ) => boolean | void;
+
+  private readonly onKeyValueAdd: (
+    key: ObjectIndex,
+    value: any,
+    stack?: any[],
+    keyStack?: ObjectIndex[],
+  ) => boolean | void;
 
   constructor(options: AssemblerOptions = {}) {
     this.onArrayPush = options.onArrayPush;
@@ -42,7 +57,7 @@ export class Assembler {
 
   private _pushStacks(newCurrent: any): void {
     if (this.current) this.keyStack.push(this.key);
-    this.stack.push(this.current = newCurrent);
+    this.stack.push((this.current = newCurrent));
   }
 
   private _popStacks(): void {
@@ -63,7 +78,10 @@ export class Assembler {
         }
       } else {
         const { onKeyValueAdd } = this;
-        if (!onKeyValueAdd || onKeyValueAdd.call(this, key, value, this.stack, this.keyStack) !== false) {
+        if (
+          !onKeyValueAdd ||
+          onKeyValueAdd.call(this, key, value, this.stack, this.keyStack) !== false
+        ) {
           current[key] = value;
         }
         this.key = null;
@@ -85,11 +103,12 @@ export class Assembler {
         break;
 
       case 'endObject':
-      case 'endArray':
+      case 'endArray': {
         const finishedCurrent = this.current;
         this._popStacks();
         this._saveValue(finishedCurrent);
         break;
+      }
 
       case 'keyValue':
         this.key = token.value;

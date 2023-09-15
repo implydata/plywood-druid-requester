@@ -14,54 +14,52 @@
  * limitations under the License.
  */
 
-const { expect } = require("chai");
-const toArray = require("stream-to-array");
+const { expect } = require('chai');
+const toArray = require('stream-to-array');
 
-let { druidRequesterFactory } = require('../build/druidRequester');
+const { druidRequesterFactory } = require('../build/druidRequester');
 
-let info = require('./info');
-
-let druidRequester = druidRequesterFactory({
+const druidRequester = druidRequesterFactory({
   host: 'localhost:12340', // nothing listening on this port
 });
 
-describe("Druid requester dead cluster", function() {
+describe('Druid requester dead cluster', function () {
   this.timeout(100);
 
-  it("introspects", () => {
-    return toArray(druidRequester({
-      query: {
-        "queryType": "introspect",
-        "dataSource": 'wikipedia'
-      }
-    }))
-      .then((res) => {
+  it('introspects', () => {
+    return toArray(
+      druidRequester({
+        query: {
+          queryType: 'introspect',
+          dataSource: 'wikipedia',
+        },
+      }),
+    )
+      .then(() => {
         throw new Error('DID_NOT_THROW');
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.message).to.contain('ECONNREFUSED 127.0.0.1:12340');
       });
   });
 
-  it("query", () => {
-    return toArray(druidRequester({
-      query: {
-        "queryType": "timeseries",
-        "dataSource": "wikipedia",
-        "granularity": "hour",
-        "aggregations": [
-          { "type": "count", "name": "Count" }
-        ],
-        "intervals": ["2015-09-12T00:00:00/2015-09-12T05:00:00"]
-      }
-    }))
-      .then((res) => {
+  it('query', () => {
+    return toArray(
+      druidRequester({
+        query: {
+          queryType: 'timeseries',
+          dataSource: 'wikipedia',
+          granularity: 'hour',
+          aggregations: [{ type: 'count', name: 'Count' }],
+          intervals: ['2015-09-12T00:00:00/2015-09-12T05:00:00'],
+        },
+      }),
+    )
+      .then(() => {
         throw new Error('DID_NOT_THROW');
       })
-      .catch((e) => {
+      .catch(e => {
         expect(e.message).to.contain('ECONNREFUSED 127.0.0.1:12340');
       });
   });
-
 });
-
