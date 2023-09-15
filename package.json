@@ -26,10 +26,10 @@
   },
   "scripts": {
     "compile": "tsc",
-    "eslint": "eslint --max-warnings 0 'src/*.ts'",
+    "eslint": "eslint --max-warnings 0 'src/*.ts' 'test/*.js'",
     "prepublishOnly": "npm run compile",
-    "prettify": "prettier --write 'src/*.ts'",
-    "prettify-check": "prettier --check 'src/*.ts'",
+    "prettify": "prettier --write 'src/*.ts' 'test/*.js'",
+    "prettify-check": "prettier --check 'src/*.ts' 'test/*.js'",
     "watch": "tsc --watch",
     "pretest": "tsc",
     "test": "mocha"
