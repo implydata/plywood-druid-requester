@@ -49,6 +49,23 @@ export type DruidRequestDecorator = (
   decoratorContext: { [k: string]: any },
 ) => Decoration | Promise<Decoration>;
 
+export interface DruidEndpointPathOverrides {
+  /** @default '/status' */
+  status?: string;
+
+  /** @default '/druid/v2/datasources/' */
+  introspect?: string;
+
+  /** @default '/druid/v2/datasources/' */
+  sourceList?: string;
+
+  /** @default '/druid/v2/sql/' */
+  sql?: string;
+
+  /** @default '/druid/v2/' */
+  native?: string;
+}
+
 export interface DruidRequesterParameters {
   locator?: PlywoodLocator;
   host?: string;
@@ -66,6 +83,7 @@ export interface DruidRequesterParameters {
   socksPassword?: string;
   cancelToken?: CancelToken;
   getQueryId?: () => string;
+  endpointOverrides?: DruidEndpointPathOverrides;
 }
 
 export interface DecoratorRequest {
@@ -168,8 +186,15 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     socksHost,
     cancelToken,
     getQueryId,
+    endpointOverrides,
   } = parameters;
-
+  const endpointPaths: Required<DruidEndpointPathOverrides> = {
+    status: endpointOverrides?.status ?? '/status',
+    sourceList: endpointOverrides?.sourceList ?? '/druid/v2/datasources/',
+    introspect: endpointOverrides?.introspect ?? '/druid/v2/datasources/',
+    native: endpointOverrides?.native ?? '/druid/v2/',
+    sql: endpointOverrides?.sql ?? '/druid/v2/sql/',
+  };
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
 
@@ -270,7 +295,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       context: {},
       options: {
         method: 'GET',
-        url: url + '/druid/v2/datasources',
+        url: url + endpointPaths.sourceList,
         json: true,
         timeout: timeout,
       },
@@ -331,7 +356,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           context,
           options: {
             method: 'GET',
-            url: url + '/status',
+            url: url + endpointPaths.status,
             json: true,
             timeout: timeout,
           },
@@ -344,15 +369,17 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       }
 
       if (queryType === 'introspect' || queryType === 'sourceList') {
+        const pathname =
+          queryType === 'introspect'
+            ? endpointPaths.introspect + getDataSourcesFromQuery(query)[0]
+            : endpointPaths.sourceList;
+
         requestPromiseWithDecoration({
           query,
           context,
           options: {
             method: 'GET',
-            url:
-              url +
-              '/druid/v2/datasources/' +
-              (queryType === 'introspect' ? getDataSourcesFromQuery(query)[0] : ''),
+            url: url + pathname,
             json: true,
             timeout: timeout,
           },
@@ -392,17 +419,16 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       }
 
       const queryId = (query.context || {}).queryId;
+      const pathname =
+        (queryType === 'sql' ? endpointPaths.sql : endpointPaths.native) +
+        (context.pretty ? '?pretty' : '');
 
       requestOptionsWithDecoration({
         query,
         context,
         options: {
           method: 'POST',
-          url:
-            url +
-            '/druid/v2/' +
-            (queryType === 'sql' ? 'sql/' : '') +
-            (context['pretty'] ? '?pretty' : ''),
+          url: url + pathname,
           body: JSON.stringify(query),
           headers: {
             'Content-type': 'application/json',
@@ -421,7 +447,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
               .then(() => {
                 return requestPromise({
                   method: 'DELETE',
-                  url: url + '/druid/v2/' + queryId,
+                  url: url + endpointPaths.native + queryId,
                 });
               })
               .catch(() => {}); // Don't worry node about it if it fails
