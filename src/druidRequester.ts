@@ -510,7 +510,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
             // rq.on('end', () => stream.push(null));
           });
       }, streamError);
-    }, streamError);
+    });
 
     return stream;
   };
