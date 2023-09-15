@@ -1,0 +1,6 @@
+{
+  "extends": "@awesome-code-style",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  }
+}

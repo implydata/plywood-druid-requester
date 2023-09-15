@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-import { Transform, TransformOptions } from "stream";
-import { Assembler, ObjectIndex } from "./assembler";
+import type { TransformOptions } from 'stream';
+import { Transform } from 'stream';
+
+import type { ObjectIndex } from './assembler';
+import { Assembler } from './assembler';
 
 export interface RowBuilderOptions extends TransformOptions {
   resultType: string;
@@ -26,32 +29,31 @@ export interface RowBuilderOptions extends TransformOptions {
 }
 
 export class RowBuilder extends Transform {
-
   static cleanupIgnoreFactory(ignorePrefix: string | null) {
     if (ignorePrefix == null) return null;
     const ignorePrefixLength = ignorePrefix.length;
     return (obj: any) => {
-      for (let k in obj) {
+      for (const k in obj) {
         if (k.substr(0, ignorePrefixLength) === ignorePrefix) delete obj[k];
       }
-    }
+    };
   }
 
   static cleanupDummyFactory(dummyPrefix: string | null) {
     if (dummyPrefix == null) return null;
     const dummyPrefixLength = dummyPrefix.length;
     return (obj: any) => {
-      for (let k in obj) {
+      for (const k in obj) {
         if (k.substr(0, dummyPrefixLength) === dummyPrefix) {
           obj[k.substr(dummyPrefixLength)] = obj[k];
           delete obj[k];
         }
       }
-    }
+    };
   }
 
-  private assembler: Assembler;
-  private flushRoot: boolean;
+  private readonly assembler: Assembler;
+  private readonly flushRoot: boolean;
   private metaEmitted: boolean;
   private columns: string[];
   public maybeNoDataSource: boolean;
@@ -60,14 +62,25 @@ export class RowBuilder extends Transform {
     options.readableObjectMode = true;
     options.writableObjectMode = true;
     super(options);
-    const { resultType, resultFormat, timestamp = 'timestamp', ignorePrefix = null, dummyPrefix = null } = options;
+    const {
+      resultType,
+      resultFormat,
+      timestamp = 'timestamp',
+      ignorePrefix = null,
+      dummyPrefix = null,
+    } = options;
     this.maybeNoDataSource = resultType !== 'sql'; // sql mode will always throw an error, thank god.
 
     const cleanupIgnore = RowBuilder.cleanupIgnoreFactory(ignorePrefix);
     const cleanupDummy = RowBuilder.cleanupDummyFactory(dummyPrefix);
 
     let onArrayPush: (value: any, stack: any[], keyStack?: ObjectIndex[]) => boolean = null;
-    let onKeyValueAdd: (key: ObjectIndex, value: any, stack?: any[], keyStack?: ObjectIndex[]) => boolean = (key, value) => {
+    let onKeyValueAdd: (
+      key: ObjectIndex,
+      value: any,
+      stack?: any[],
+      keyStack?: ObjectIndex[],
+    ) => boolean = (_key, _value) => {
       this.maybeNoDataSource = false;
       return true;
     };
@@ -77,7 +90,7 @@ export class RowBuilder extends Transform {
       case 'timeBoundary':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value.result;
+            const d = value.result;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -91,7 +104,7 @@ export class RowBuilder extends Transform {
       case 'topN':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 2 && keyStack[1] === 'result') {
-            let d = value;
+            const d = value;
             if (timestamp) d.timestamp = new Date(stack[1].timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -105,7 +118,7 @@ export class RowBuilder extends Transform {
       case 'groupBy':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value.event;
+            const d = value.event;
             if (timestamp) d[timestamp] = new Date(value.timestamp);
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
@@ -120,7 +133,7 @@ export class RowBuilder extends Transform {
         onArrayPush = (value, stack, keyStack) => {
           // keyStack = [0, result, events]
           if (keyStack.length === 3 && keyStack[2] === 'events') {
-            let d = value.event;
+            const d = value.event;
             if (timestamp) d[timestamp] = new Date(d.timestamp);
             if (timestamp !== 'timestamp') delete d['timestamp'];
             if (cleanupIgnore) cleanupIgnore(d);
@@ -146,8 +159,8 @@ export class RowBuilder extends Transform {
           onArrayPush = (value, stack, keyStack) => {
             // keyStack = [0, events]
             if (keyStack.length === 2 && keyStack[1] === 'events') {
-              let d: any = {};
-              let n = columns.length;
+              const d: any = {};
+              const n = columns.length;
               for (let i = 0; i < n; i++) {
                 d[columns[i]] = value[i];
               }
@@ -167,7 +180,7 @@ export class RowBuilder extends Transform {
           onArrayPush = (value, stack, keyStack) => {
             // keyStack = [0, events]
             if (keyStack.length === 2 && keyStack[1] === 'events') {
-              let d = value;
+              const d = value;
               if (cleanupIgnore) cleanupIgnore(d);
               if (cleanupDummy) cleanupDummy(d);
               this.push(d);
@@ -181,7 +194,7 @@ export class RowBuilder extends Transform {
       case 'segmentMetadata':
         onArrayPush = (value, stack, keyStack) => {
           if (keyStack.length === 0) {
-            let d = value;
+            const d = value;
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
             this.push(d);
@@ -197,12 +210,12 @@ export class RowBuilder extends Transform {
           if (keyStack.length === 0) {
             if (this.columns) {
               this.emit('meta', {
-                columns: this.columns
+                columns: this.columns,
               });
               this.columns = null;
             }
 
-            let d = value;
+            const d = value;
             if (cleanupIgnore) cleanupIgnore(d);
             if (cleanupDummy) cleanupDummy(d);
             this.push(d);
@@ -226,7 +239,7 @@ export class RowBuilder extends Transform {
 
     this.assembler = new Assembler({
       onArrayPush,
-      onKeyValueAdd
+      onKeyValueAdd,
     });
   }
 
@@ -242,4 +255,3 @@ export class RowBuilder extends Transform {
     callback();
   }
 }
-

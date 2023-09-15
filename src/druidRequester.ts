@@ -15,15 +15,18 @@
  * limitations under the License.
  */
 
-import { PlywoodRequester, PlywoodLocator, Location, basicLocator, hostToLocation, AuthToken } from 'plywood-base-api';
-import { ReadableStream, PassThrough } from 'readable-stream';
-import * as request from 'request';
-import * as hasOwnProperty from 'has-own-prop'
-import * as requestPromise from 'request-promise-native';
 import * as concat from 'concat-stream';
+import * as hasOwnProperty from 'has-own-prop';
+import type { AuthToken, Location, PlywoodLocator, PlywoodRequester } from 'plywood-base-api';
+import { basicLocator, hostToLocation } from 'plywood-base-api';
+import type { ReadableStream } from 'readable-stream';
+import { PassThrough } from 'readable-stream';
+import * as request from 'request';
+import * as requestPromise from 'request-promise-native';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
+
 import { RowBuilder } from './rowBuilder';
 
 // Cancel types copied from axios
@@ -39,13 +42,12 @@ export interface CancelToken {
 
 export type Protocol = 'plain' | 'tls-loose' | 'tls';
 
-export interface DruidUrlBuilder {
-  (location: Location, secure: boolean): string
-}
+export type DruidUrlBuilder = (location: Location, secure: boolean) => string;
 
-export interface DruidRequestDecorator {
-  (decoratorRequest: DecoratorRequest, decoratorContext: { [k: string]: any }): Decoration | Promise<Decoration>;
-}
+export type DruidRequestDecorator = (
+  decoratorRequest: DecoratorRequest,
+  decoratorContext: { [k: string]: any },
+) => Decoration | Promise<Decoration>;
 
 export interface DruidRequesterParameters {
   locator?: PlywoodLocator;
@@ -82,15 +84,15 @@ export interface Decoration {
 }
 
 function getDataSourcesFromQuery(query: any): string[] {
-  let queryDataSource = query.dataSource;
+  const queryDataSource = query.dataSource;
   if (!queryDataSource) return [];
   if (typeof queryDataSource === 'string') {
     return [queryDataSource];
-  } else if (queryDataSource.type === "table") {
+  } else if (queryDataSource.type === 'table') {
     return [queryDataSource.name];
-  } else if (queryDataSource.type === "union") {
+  } else if (queryDataSource.type === 'union') {
     return queryDataSource.dataSources;
-  } else if (queryDataSource.type === "query") {
+  } else if (queryDataSource.type === 'query') {
     return getDataSourcesFromQuery(queryDataSource.query);
   } else {
     // If we can not find a data source, that is ok, avoid the data source existence check
@@ -114,7 +116,10 @@ interface RequestWithDecorationOptions {
   options: request.OptionsWithUrl;
 }
 
-export function applyAuthTokenToHeaders(headers: Record<string, string>, authToken: AuthToken | undefined): void {
+export function applyAuthTokenToHeaders(
+  headers: Record<string, string>,
+  authToken: AuthToken | undefined,
+): void {
   if (!authToken) return;
 
   switch (authToken.type) {
@@ -122,24 +127,28 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
       if (typeof authToken.username !== 'string') throw new Error('basic-auth must set username');
       if (typeof authToken.password !== 'string') throw new Error('basic-auth must set password');
 
-      headers["Authorization"] = "Basic " + Buffer.from(authToken.username + ':' + authToken.password).toString('base64');
+      headers['Authorization'] =
+        'Basic ' + Buffer.from(authToken.username + ':' + authToken.password).toString('base64');
       break;
 
     case 'imply-token-hmac':
-      if (typeof authToken.implyToken !== 'string') throw new Error('imply-token-hmac must set implyToken');
-      if (typeof authToken.implyHmac !== 'string') throw new Error('imply-token-hmac must set implyHmac');
+      if (typeof authToken.implyToken !== 'string')
+        throw new Error('imply-token-hmac must set implyToken');
+      if (typeof authToken.implyHmac !== 'string')
+        throw new Error('imply-token-hmac must set implyHmac');
 
-      headers["X-Imply-Token"] = authToken.implyToken;
-      headers["X-Imply-HMAC"] = authToken.implyHmac;
+      headers['X-Imply-Token'] = authToken.implyToken;
+      headers['X-Imply-HMAC'] = authToken.implyHmac;
 
       // Temp send headers without X also
-      headers["Imply-Token"] = authToken.implyToken;
-      headers["Imply-HMAC"] = authToken.implyHmac;
+      headers['Imply-Token'] = authToken.implyToken;
+      headers['Imply-HMAC'] = authToken.implyHmac;
       break;
 
     case 'bearer-auth':
-      if (typeof authToken.bearerToken !== 'string') throw new Error('bearer-auth must set bearerToken');
-      headers["Authorization"] = authToken.bearerToken;
+      if (typeof authToken.bearerToken !== 'string')
+        throw new Error('bearer-auth must set bearerToken');
+      headers['Authorization'] = authToken.bearerToken;
       break;
 
     default:
@@ -148,13 +157,24 @@ export function applyAuthTokenToHeaders(headers: Record<string, string>, authTok
 }
 
 export function druidRequesterFactory(parameters: DruidRequesterParameters): PlywoodRequester<any> {
-  let { locator, host, timeout, protocol, urlBuilder, requestDecorator, authToken, socksHost, cancelToken, getQueryId } = parameters;
+  let {
+    locator,
+    host,
+    timeout,
+    protocol,
+    urlBuilder,
+    requestDecorator,
+    authToken,
+    socksHost,
+    cancelToken,
+    getQueryId,
+  } = parameters;
 
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
 
   if (!locator) {
-    if (!host) throw new Error("must have a `host` or a `locator`");
+    if (!host) throw new Error('must have a `host` or a `locator`');
     locator = basicLocator(host, secure ? 8282 : 8082);
   }
 
@@ -169,72 +189,75 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     agentClass = secure ? SecureAgent : PlainAgent;
     agentOptions = {
       socksHost: socksLocation.hostname,
-      socksPort: socksLocation.port
+      socksPort: socksLocation.port,
     };
     if (parameters.socksUsername) agentOptions.socksUsername = parameters.socksUsername;
     if (parameters.socksPassword) agentOptions.socksPassword = parameters.socksPassword;
   }
 
-  function requestOptionsWithDecoration(opt: RequestWithDecorationOptions): Promise<request.OptionsWithUrl> {
-    return Promise.resolve()
-      .then(() => {
-        const { query, context, options } = opt;
-        if (agentClass) {
-          options.agentClass = agentClass;
-          options.agentOptions = agentOptions;
-        }
+  function requestOptionsWithDecoration(
+    opt: RequestWithDecorationOptions,
+  ): Promise<request.OptionsWithUrl> {
+    return Promise.resolve().then(() => {
+      const { query, context, options } = opt;
+      if (agentClass) {
+        options.agentClass = agentClass;
+        options.agentOptions = agentOptions;
+      }
 
-        if (secure) {
-          options.strictSSL = (protocol === 'tls');
-          if (parameters.ca) options.ca = parameters.ca;
-          if (parameters.cert) options.cert = parameters.cert;
-          if (parameters.key) options.key = parameters.key;
-          if (parameters.passphrase) options.passphrase = parameters.passphrase;
-        }
+      if (secure) {
+        options.strictSSL = protocol === 'tls';
+        if (parameters.ca) options.ca = parameters.ca;
+        if (parameters.cert) options.cert = parameters.cert;
+        if (parameters.key) options.key = parameters.key;
+        if (parameters.passphrase) options.passphrase = parameters.passphrase;
+      }
 
-        options.headers = options.headers || {};
-        applyAuthTokenToHeaders(options.headers, authToken);
+      options.headers = options.headers || {};
+      applyAuthTokenToHeaders(options.headers, authToken);
 
-        if (requestDecorator) {
-          let decorationPromise = requestDecorator({
+      if (requestDecorator) {
+        const decorationPromise = requestDecorator(
+          {
             method: options.method,
             url: options.url,
-            query: JSON.parse(JSON.stringify(query)) // quick deep copy
-          }, context['decoratorContext']);
+            query: JSON.parse(JSON.stringify(query)), // quick deep copy
+          },
+          context['decoratorContext'],
+        );
 
-          if (decorationPromise) {
-            return Promise.resolve(decorationPromise)
-              .then((decoration: Decoration) => {
-                if (!decoration) return options;
-                if (decoration.method) {
-                  options.method = decoration.method;
-                }
-                if (decoration.url) {
-                  options.url = decoration.url;
-                }
-                if (decoration.headers) {
-                  Object.assign(options.headers, decoration.headers);
-                }
-                if (decoration.query) {
-                  if (typeof decoration.query === 'string') {
-                    options.body = decoration.query;
-                  } else {
-                    options.body = JSON.stringify(decoration.query);
-                  }
-                }
-                if (decoration.resultType) {
-                  (options as any).resultType = decoration.resultType; // This is a type hack, ToDo: make proper type here
-                }
-                if (decoration.timestampOverride) {
-                  (options as any).timestampOverride = decoration.timestampOverride; // This is a type hack, ToDo: make proper type here
-                }
-                return options;
-              });
-          }
+        if (decorationPromise) {
+          return Promise.resolve(decorationPromise).then((decoration: Decoration) => {
+            if (!decoration) return options;
+            if (decoration.method) {
+              options.method = decoration.method;
+            }
+            if (decoration.url) {
+              options.url = decoration.url;
+            }
+            if (decoration.headers) {
+              Object.assign(options.headers, decoration.headers);
+            }
+            if (decoration.query) {
+              if (typeof decoration.query === 'string') {
+                options.body = decoration.query;
+              } else {
+                options.body = JSON.stringify(decoration.query);
+              }
+            }
+            if (decoration.resultType) {
+              (options as any).resultType = decoration.resultType; // This is a type hack, ToDo: make proper type here
+            }
+            if (decoration.timestampOverride) {
+              (options as any).timestampOverride = decoration.timestampOverride; // This is a type hack, ToDo: make proper type here
+            }
+            return options;
+          });
         }
+      }
 
-        return options;
-      });
+      return options;
+    });
   }
 
   function requestPromiseWithDecoration(opt: RequestWithDecorationOptions): Promise<any> {
@@ -243,33 +266,30 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
 
   function failIfNoDatasource(url: string, query: any, timeout: number): Promise<any> {
     return requestPromiseWithDecoration({
-      query: { queryType: "sourceList" },
+      query: { queryType: 'sourceList' },
       context: {},
       options: {
-        method: "GET",
-        url: url + "/druid/v2/datasources",
+        method: 'GET',
+        url: url + '/druid/v2/datasources',
         json: true,
-        timeout: timeout
+        timeout: timeout,
+      },
+    }).then((resp): any => {
+      const dataSourcesInQuery = getDataSourcesFromQuery(query);
+      if (dataSourcesInQuery.every(dataSource => resp.indexOf(dataSource) < 0)) {
+        throw new Error(`No such datasource '${dataSourcesInQuery[0]}'`);
       }
-    })
-      .then((resp): any => {
-        const dataSourcesInQuery = getDataSourcesFromQuery(query);
-        if (dataSourcesInQuery.every((dataSource) => resp.indexOf(dataSource) < 0)) {
-          throw new Error(`No such datasource '${dataSourcesInQuery[0]}'`);
-        }
 
-        return null;
-      });
+      return null;
+    });
   }
 
   return (req): ReadableStream => {
-    let context = req.context || {};
+    const context = req.context || {};
     let query = req.query;
 
     if (getQueryId) {
-      query = Object.assign({}, query, {
-        context: Object.assign({}, query.context || {}, { queryId: getQueryId() })
-      });
+      query = { ...query, context: { ...(query.context || {}), queryId: getQueryId() } };
     }
 
     let { queryType, intervals } = query;
@@ -279,12 +299,15 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       queryType = 'sql';
     }
 
-    let stream = new PassThrough({
-      objectMode: true
+    const stream = new PassThrough({
+      objectMode: true,
     });
 
     // Little hack: allow these special intervals to perform a query-less return
-    if (intervals && (intervals === "1000-01-01/1000-01-02" || (Array.isArray(intervals) && !intervals.length))) {
+    if (
+      intervals &&
+      (intervals === '1000-01-01/1000-01-02' || (Array.isArray(intervals) && !intervals.length))
+    ) {
       process.nextTick(() => {
         stream.push(null);
       });
@@ -299,193 +322,195 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     }
 
     let url: string;
-    locator()
-      .then((location) => {
-        url = urlBuilder(location, secure);
+    locator().then(location => {
+      url = urlBuilder(location, secure);
 
-        if (queryType === "status") {
-          requestPromiseWithDecoration({
-            query,
-            context,
-            options: {
-              method: "GET",
-              url: url + '/status',
-              json: true,
-              timeout: timeout
-            }
-          })
-            .then(
-              (resp) => {
-                stream.push(resp);
-                stream.push(null);
-              },
-              streamError
-            );
-
-          return;
-        }
-
-        if (queryType === "introspect" || queryType === "sourceList") {
-          requestPromiseWithDecoration({
-            query,
-            context,
-            options: {
-              method: "GET",
-              url: url + "/druid/v2/datasources/" + (queryType === "introspect" ? getDataSourcesFromQuery(query)[0] : ''),
-              json: true,
-              timeout: timeout
-            }
-          })
-            .then((resp) => {
-              if (queryType === "introspect") {
-                if (Array.isArray(resp.dimensions) && !resp.dimensions.length &&
-                  Array.isArray(resp.metrics) && !resp.metrics.length) {
-
-                  return failIfNoDatasource(url, query, timeout).then((): any => {
-                    let err: any = new Error("Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.");
-                    err.query = query;
-                    throw err;
-                  });
-                }
-              }
-              return resp;
-            })
-            .then(
-              (resp) => {
-                stream.push(resp);
-                stream.push(null);
-              },
-              streamError
-            );
-
-          return;
-        }
-
-        // ========= Must be a data query =========
-
-        if (timeout != null) {
-          query.context || (query.context = {});
-          query.context.timeout = timeout;
-        }
-
-        const queryId = (query.context || {}).queryId;
-
-        requestOptionsWithDecoration({
+      if (queryType === 'status') {
+        requestPromiseWithDecoration({
           query,
           context,
           options: {
-            method: "POST",
-            url: url + "/druid/v2/" + (queryType === 'sql' ? 'sql/' : '') + (context['pretty'] ? '?pretty': ''),
-            body: JSON.stringify(query),
-            headers: {
-              "Content-type": "application/json"
-            },
-            timeout: timeout
-          }
+            method: 'GET',
+            url: url + '/status',
+            json: true,
+            timeout: timeout,
+          },
+        }).then(resp => {
+          stream.push(resp);
+          stream.push(null);
+        }, streamError);
+
+        return;
+      }
+
+      if (queryType === 'introspect' || queryType === 'sourceList') {
+        requestPromiseWithDecoration({
+          query,
+          context,
+          options: {
+            method: 'GET',
+            url:
+              url +
+              '/druid/v2/datasources/' +
+              (queryType === 'introspect' ? getDataSourcesFromQuery(query)[0] : ''),
+            json: true,
+            timeout: timeout,
+          },
         })
-          .then(
-            (options) => {
-              if (cancelToken) {
-                if (cancelToken.reason) {
-                  streamError(cancelToken.reason);
-                  return;
-                }
-
-                if (queryId) {
-                  cancelToken.promise.then(() => {
-                    return requestPromise({
-                      method: "DELETE",
-                      url: url + "/druid/v2/" + queryId,
-                    });
-                  }).catch(() => {}) // Don't worry node about it if it fails
-                }
+          .then(resp => {
+            if (queryType === 'introspect') {
+              if (
+                Array.isArray(resp.dimensions) &&
+                !resp.dimensions.length &&
+                Array.isArray(resp.metrics) &&
+                !resp.metrics.length
+              ) {
+                return failIfNoDatasource(url, query, timeout).then((): any => {
+                  const err: any = new Error(
+                    'Can not use GET route, data is probably in a real-time node or more than a two weeks old. Try segmentMetadata instead.',
+                  );
+                  err.query = query;
+                  throw err;
+                });
               }
+            }
+            return resp;
+          })
+          .then(resp => {
+            stream.push(resp);
+            stream.push(null);
+          }, streamError);
 
-              request(options)
-                .on('error', (err: any) => {
-                  if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT') err = new Error("timeout");
-                  streamError(err);
-                })
-                .on('response', (response) => {
-                  if (response.statusCode !== 200) {
-                    response.on('error', streamError);
+        return;
+      }
 
-                    response.pipe(concat((resp: string) => {
-                      resp = String(resp);
-                      let error: any;
-                      try {
-                        const body = JSON.parse(resp);
-                        if (body && body.error === "Query timeout") {
-                          error = new Error("timeout");
-                        } else {
-                          let message: string;
-                          if (body && typeof body.error === 'string') {
-                            message = body.error;
-                            if (typeof body.errorMessage === 'string') {
-                              message = `${message}: ${body.errorMessage}`;
-                            }
-                          } else {
-                            message = `Bad status code (${response.statusCode})`;
-                          }
-                          error = new Error(message);
-                          error.query = query;
-                          if (body && typeof body.host === 'string') error.host = body.host;
+      // ========= Must be a data query =========
+
+      if (timeout != null) {
+        query.context ??= {};
+        query.context.timeout = timeout;
+      }
+
+      const queryId = (query.context || {}).queryId;
+
+      requestOptionsWithDecoration({
+        query,
+        context,
+        options: {
+          method: 'POST',
+          url:
+            url +
+            '/druid/v2/' +
+            (queryType === 'sql' ? 'sql/' : '') +
+            (context['pretty'] ? '?pretty' : ''),
+          body: JSON.stringify(query),
+          headers: {
+            'Content-type': 'application/json',
+          },
+          timeout: timeout,
+        },
+      }).then(options => {
+        if (cancelToken) {
+          if (cancelToken.reason) {
+            streamError(cancelToken.reason);
+            return;
+          }
+
+          if (queryId) {
+            cancelToken.promise
+              .then(() => {
+                return requestPromise({
+                  method: 'DELETE',
+                  url: url + '/druid/v2/' + queryId,
+                });
+              })
+              .catch(() => {}); // Don't worry node about it if it fails
+          }
+        }
+
+        request(options)
+          .on('error', (err: any) => {
+            if (err.message === 'ETIMEDOUT' || err.message === 'ESOCKETTIMEDOUT')
+              err = new Error('timeout');
+            streamError(err);
+          })
+          .on('response', response => {
+            if (response.statusCode !== 200) {
+              response.on('error', streamError);
+
+              response.pipe(
+                concat((resp: string) => {
+                  resp = String(resp);
+                  let error: any;
+                  try {
+                    const body = JSON.parse(resp);
+                    if (body && body.error === 'Query timeout') {
+                      error = new Error('timeout');
+                    } else {
+                      let message: string;
+                      if (body && typeof body.error === 'string') {
+                        message = body.error;
+                        if (typeof body.errorMessage === 'string') {
+                          message = `${message}: ${body.errorMessage}`;
                         }
-                      } catch (e) {
-                        error = new Error(`bad response: ${e.message}` + '\n' + resp);
+                      } else {
+                        message = `Bad status code (${response.statusCode})`;
                       }
-
-                      streamError(error);
-                    }));
-                    return;
+                      error = new Error(message);
+                      error.query = query;
+                      if (body && typeof body.host === 'string') error.host = body.host;
+                    }
+                  } catch (e) {
+                    error = new Error(`bad response: ${e.message}` + '\n' + resp);
                   }
 
-                  // response.on('data', (c: any) => console.log('c', c.toString()));
-                  // response.on('end', () => console.log('end'));
+                  streamError(error);
+                }),
+              );
+              return;
+            }
 
-                  const rowBuilder = new RowBuilder({
-                    resultType: (options as any).resultType || queryType,
-                    resultFormat: query.resultFormat,
-                    timestamp: (options as any).timestampOverride || (hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'),
-                    ignorePrefix: context['ignorePrefix'],
-                    dummyPrefix: context['dummyPrefix']
-                  });
+            // response.on('data', (c: any) => console.log('c', c.toString()));
+            // response.on('end', () => console.log('end'));
 
-                  rowBuilder.on('meta', (meta: any) => {
-                    stream.emit('meta', meta);
-                  });
+            const rowBuilder = new RowBuilder({
+              resultType: (options as any).resultType || queryType,
+              resultFormat: query.resultFormat,
+              timestamp:
+                (options as any).timestampOverride ||
+                (hasOwnProperty(context, 'timestamp') ? context['timestamp'] : 'timestamp'),
+              ignorePrefix: context['ignorePrefix'],
+              dummyPrefix: context['dummyPrefix'],
+            });
 
-                  rowBuilder.on('end', () => {
-                    if (!rowBuilder.maybeNoDataSource) {
-                      stream.end();
-                      return;
-                    }
+            rowBuilder.on('meta', (meta: any) => {
+              stream.emit('meta', meta);
+            });
 
-                    failIfNoDatasource(url, query, timeout)
-                      .then(
-                        (): any => {
-                          stream.end()
-                        },
-                        streamError
-                      );
-                  });
+            rowBuilder.on('end', () => {
+              if (!rowBuilder.maybeNoDataSource) {
+                stream.end();
+                return;
+              }
 
-                  response
-                    .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
-                    .on('error', streamError)
-                    .pipe(rowBuilder)
-                    .on('error', streamError)
-                    .pipe(stream, { end: false });
+              failIfNoDatasource(url, query, timeout).then((): any => {
+                stream.end();
+              }, streamError);
+            });
 
-                  // rq.on('error', (e: any) => stream.emit('error', e));
-                  // rq.on('data', (c: any) => stream.push(c));
-                  // rq.on('end', () => stream.push(null));
-                });
-            },
-            streamError
-          );
+            response
+              .pipe(new Combo({ packKeys: true, packStrings: true, packNumbers: true }))
+              .on('error', streamError)
+              .pipe(rowBuilder)
+              .on('error', streamError)
+              .pipe(stream, { end: false });
 
-      });
+            // rq.on('error', (e: any) => stream.emit('error', e));
+            // rq.on('data', (c: any) => stream.push(c));
+            // rq.on('end', () => stream.push(null));
+          });
+      }, streamError);
+    }, streamError);
 
     return stream;
   };
