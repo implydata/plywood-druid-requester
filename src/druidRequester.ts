@@ -189,11 +189,11 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     endpointOverrides,
   } = parameters;
   const endpointPaths: Required<DruidEndpointPathOverrides> = {
-    status: endpointOverrides.status ?? '/druid/v2/status',
-    sourceList: endpointOverrides.sourceList ?? '/druid/v2/datasources/',
-    introspect: endpointOverrides.introspect ?? '/druid/v2/datasources/',
-    native: endpointOverrides.native ?? '/druid/v2/',
-    sql: endpointOverrides.sql ?? '/druid/v2/sql/',
+    status: endpointOverrides?.status ?? '/druid/v2/status',
+    sourceList: endpointOverrides?.sourceList ?? '/druid/v2/datasources/',
+    introspect: endpointOverrides?.introspect ?? '/druid/v2/datasources/',
+    native: endpointOverrides?.native ?? '/druid/v2/',
+    sql: endpointOverrides?.sql ?? '/druid/v2/sql/',
   };
   if (!protocol) protocol = 'plain';
   const secure = protocol === 'tls' || protocol === 'tls-loose';
