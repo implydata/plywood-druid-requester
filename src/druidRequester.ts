@@ -50,7 +50,7 @@ export type DruidRequestDecorator = (
 ) => Decoration | Promise<Decoration>;
 
 export interface DruidEndpointPathOverrides {
-  /** @default '/druid/v2/status' */
+  /** @default '/status' */
   status?: string;
 
   /** @default '/druid/v2/datasources/' */
@@ -189,7 +189,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
     endpointOverrides,
   } = parameters;
   const endpointPaths: Required<DruidEndpointPathOverrides> = {
-    status: endpointOverrides?.status ?? '/druid/v2/status',
+    status: endpointOverrides?.status ?? '/status',
     sourceList: endpointOverrides?.sourceList ?? '/druid/v2/datasources/',
     introspect: endpointOverrides?.introspect ?? '/druid/v2/datasources/',
     native: endpointOverrides?.native ?? '/druid/v2/',
@@ -369,8 +369,8 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       }
 
       if (queryType === 'introspect' || queryType === 'sourceList') {
-        const fullUrl =
-          url + queryType === 'introspect'
+        const pathname =
+          queryType === 'introspect'
             ? endpointPaths.introspect + getDataSourcesFromQuery(query)[0]
             : endpointPaths.sourceList;
 
@@ -379,7 +379,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
           context,
           options: {
             method: 'GET',
-            url: fullUrl,
+            url: url + pathname,
             json: true,
             timeout: timeout,
           },
@@ -419,8 +419,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
       }
 
       const queryId = (query.context || {}).queryId;
-      const fullUrl =
-        url +
+      const pathname =
         (queryType === 'sql' ? endpointPaths.sql : endpointPaths.native) +
         (context.pretty ? '?pretty' : '');
 
@@ -429,7 +428,7 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
         context,
         options: {
           method: 'POST',
-          url: fullUrl,
+          url: url + pathname,
           body: JSON.stringify(query),
           headers: {
             'Content-type': 'application/json',
