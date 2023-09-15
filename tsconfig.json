@@ -16,7 +16,5 @@
     "outDir": "build",
     "moduleResolution": "node"
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src", "typings"]
 }
