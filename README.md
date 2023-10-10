@@ -37,6 +37,21 @@ druidRequester({
 
 Although usually you would just pass `druidRequester` into the Druid driver that is part of Plywood.
 
+### Authentication
+
+If your host requires basic authentication, you can include that in the `authToken` field:
+
+```
+druidRequester = druidRequesterGenerator({
+  host: 'my.druid.host',
+  authToken: {
+    type: 'basic-auth',
+    username: 'my.druid.user',
+    password: 'my.druid.password',
+  }
+})
+```
+
 ## Druid API extension
 
 ### Removing GETs
