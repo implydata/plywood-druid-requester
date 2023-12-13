@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
+import * as request from '@implydata/request';
+import * as requestPromise from '@implydata/request-promise-native';
 import * as concat from 'concat-stream';
 import * as hasOwnProperty from 'has-own-prop';
+import type { Url } from 'node:url';
 import type { AuthToken, Location, PlywoodLocator, PlywoodRequester } from 'plywood-base-api';
 import { basicLocator, hostToLocation } from 'plywood-base-api';
 import type { ReadableStream } from 'readable-stream';
 import { PassThrough } from 'readable-stream';
-import * as request from 'request';
-import * as requestPromise from 'request-promise-native';
 import * as PlainAgent from 'socks5-http-client/lib/Agent';
 import * as SecureAgent from 'socks5-https-client/lib/Agent';
 import * as Combo from 'stream-json/Combo';
@@ -88,7 +89,7 @@ export interface DruidRequesterParameters {
 
 export interface DecoratorRequest {
   method: string;
-  url: string;
+  url: string | Url;
   query: any;
 }
 

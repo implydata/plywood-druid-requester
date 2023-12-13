@@ -35,12 +35,12 @@
     "test": "mocha"
   },
   "dependencies": {
+    "@implydata/request": "^2.88.3",
+    "@implydata/request-promise-native": "^1.0.9",
     "concat-stream": "~1.6.2",
     "has-own-prop": "~1.0.1",
     "plywood-base-api": "~0.2.9",
     "readable-stream": "~3.0.3",
-    "request": "~2.88.0",
-    "request-promise-native": "~1.0.5",
     "socks5-http-client": "~1.0.4",
     "socks5-https-client": "~1.2.1",
     "stream-json": "~0.6.1",
@@ -51,7 +51,7 @@
     "@awesome-code-style/prettier-config": "^5.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.0.0",
-    "axios": "^0.26.1",
+    "axios": "^1.6.2",
     "chai": "4.1.2",
     "lodash.clonedeepwith": "4.5.0",
     "mocha": "^10.2.0",
