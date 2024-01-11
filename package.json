@@ -35,8 +35,8 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@implydata/request": "^2.88.3",
-    "@implydata/request-promise-native": "^1.0.9",
+    "@implydata/request": "^2.88.4",
+    "@implydata/request-promise-native": "^1.0.10",
     "concat-stream": "~1.6.2",
     "has-own-prop": "~1.0.1",
     "plywood-base-api": "~0.2.9",
