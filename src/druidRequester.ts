@@ -447,11 +447,15 @@ export function druidRequesterFactory(parameters: DruidRequesterParameters): Ply
             cancelToken.promise
               .then(() => {
                 return requestPromise({
+                  ...options,
                   method: 'DELETE',
                   url: url + endpointPaths.native + queryId,
                 });
               })
-              .catch(() => {}); // Don't worry node about it if it fails
+              .catch(e => {
+                console.error(`Failed to cancel query "${queryId}"`);
+                console.error(e.stack);
+              });
           }
         }
 
